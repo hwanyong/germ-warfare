@@ -1,0 +1,73 @@
+/* 효과 — 세균 idle 울렁임 + 우주선/레이저 이동 애니.
+ * 참고: docs/design.md §애니메이션, src/render/fx.mjs */
+
+/* ---------- 세균 idle (외곽선 울렁 + 숨쉬기) ---------- */
+/* 외곽선 울렁임 = SVG feTurbulence 변위필터 (fx.mjs installFx 가 #germ-wobble 주입).
+ * 숨쉬기 = CSS scale. per-cell 위상은 fx.mjs 가 animation-delay 로 랜덤화. */
+.cell {
+	filter: url(#germ-wobble);
+	animation: germ-breathe 3.2s ease-in-out infinite;
+	transform-origin: center;
+}
+@keyframes germ-breathe {
+	0%, 100% { transform: scale(1); }
+	50%      { transform: scale(1.055); }
+}
+/* 생성 pop */
+@keyframes germ-pop {
+	0%   { transform: scale(0); }
+	70%  { transform: scale(1.18); }
+	100% { transform: scale(1); }
+}
+.cell.pop { animation: germ-pop 0.32s cubic-bezier(.3,1.3,.5,1) 1, germ-breathe 3.2s ease-in-out infinite 0.32s; }
+
+/* ---------- 우주선 / 레이저 레이어 ---------- */
+.fx-layer {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	overflow: visible;
+	z-index: 5;
+}
+.ship {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 3.4em;
+	will-change: transform;
+}
+.ship > img {
+	width: 100%;
+	display: block;
+	animation: ship-bob 2.4s ease-in-out infinite;
+	filter: drop-shadow(0 0.25em 0.15em #0000002e);
+}
+@keyframes ship-bob {
+	0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+	50%      { transform: translateY(-0.28em) rotate(1.5deg); }
+}
+
+/* 레이저 빔 (팀색 그라디언트, 세로) */
+.laser-beam {
+	position: absolute;
+	width: 0.28em;
+	transform-origin: top center;
+	border-radius: 0.14em;
+	filter: blur(0.4px) drop-shadow(0 0 0.3em currentColor);
+	background: linear-gradient(to bottom, transparent, currentColor 30%, #fff 55%, currentColor 80%, transparent);
+}
+.laser-beam[data-team="p1"] { color: var(--p1); }
+.laser-beam[data-team="p2"] { color: var(--p2); }
+
+/* burst 스파크 (손그림, 팀색) */
+.laser-spark {
+	position: absolute;
+	width: 2.2em;
+	transform: translate(-50%, -50%);
+	will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cell { filter: none; animation: none; }
+	.ship > img { animation: none; }
+}
