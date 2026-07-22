@@ -1,11 +1,16 @@
-// 효과 엔진 — 세균 idle 울렁임(SVG 변위필터) + 우주선/레이저 이동 애니.
+// 효과 엔진 — 세균 idle 울렁임(SVG 변위필터) + 우주선 게임 오브젝트/레이저 이동 애니.
 //
-// 이동 시퀀스(유저 의도): ship(홈) → 타겟 셀 상공 이동 → 레이저 하강 + 스파크
-// → 세균 생성/이동(onImpact) → 귀환. WAAPI Promise 로 순차 대기.
+// Ship = 게임 오브젝트: 자신의 위치·크기를 알고, 발사구(muzzle)를 캐릭터 기준
+// 오프셋으로 노출한다. 총구 이펙트는 muzzle 위치 + 캐릭터 기준 크기로 적용 →
+// 이미지 로드 타이밍/타겟과 무관하게 항상 캐릭터에 붙어 나간다.
 // 참고: docs/design.md §애니메이션
 
 const BASE = '/germ-warfare/assets'
-const FIRE_LIFT = 20 // 발사 시 우주선을 이만큼(px) 더 높이 띄운다
+const FIRE_LIFT = 20        // 발사 시 우주선을 이만큼(px) 더 높이 띄운다
+const MUZZLE_DY = 0.30      // 발사구 = 배 중심에서 아래로 (배 높이 비율)
+const MUZZLE_SPARK_K = 1.7  // 총구 스파크 크기 = 배 너비 배수 (캐릭터 기준)
+
+export const WOBBLE_VARIANTS = 8
 
 const el = (tag, cls) => {
 	const n = document.createElement(tag)
@@ -15,10 +20,7 @@ const el = (tag, cls) => {
 const wait = ms => new Promise(r => setTimeout(r, ms))
 
 /** 세균 외곽선 울렁임용 SVG feTurbulence 변위필터 풀(8종)을 1회 주입.
- * 각 변종은 seed(패턴)·dur(주기)·begin(위상)이 달라, 세포마다 랜덤 배정하면
- * 전체가 불규칙하게 울렁인다(동기 방지). */
-export const WOBBLE_VARIANTS = 8
-
+ * seed(패턴)·dur(주기)·begin(위상)이 달라 세포마다 랜덤 배정하면 불규칙하게 울렁인다. */
 export function installFx() {
 	if (document.querySelector('#germ-wobble-0')) return
 	const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -32,8 +34,8 @@ export function installFx() {
 		const seed = i * 17 + 3
 		const bf = (0.016 + i * 0.0012).toFixed(4)
 		const bf2 = (+bf + 0.006).toFixed(4)
-		const dur = (5.5 + i * 0.55).toFixed(2) // 5.5~9.4s 서로 다른 주기
-		const begin = (-i * 0.83).toFixed(2)    // 위상 오프셋
+		const dur = (5.5 + i * 0.55).toFixed(2)
+		const begin = (-i * 0.83).toFixed(2)
 		defs += `
 			<filter id="germ-wobble-${i}" x="-20%" y="-20%" width="140%" height="140%">
 				<feTurbulence type="fractalNoise" baseFrequency="${bf} ${bf2}" numOctaves="1" seed="${seed}" result="n">
@@ -48,45 +50,13 @@ export function installFx() {
 	document.body.appendChild(svg)
 }
 
-/** 팀별 우주선을 보드 fx-layer 에 마운트하고 홈(상/하단 중앙)에 배치 */
-export function mountShips(board) {
-	const layer = board.querySelector('.fx-layer')
-	const W = board.clientWidth
-	const H = board.clientHeight
-	const homes = {
-		p1: { x: W * 0.5, y: H * 0.04 }, // ID0 = 상단 코너 진영
-		p2: { x: W * 0.5, y: H * 0.96 }  // ID1 = 하단 코너 진영
-	}
-	for (const team of ['p1', 'p2']) {
-		const ship = el('div', 'ship')
-		ship.dataset.team = team
-		const img = el('img')
-		img.src = `${BASE}/ship/ship-${team}.png`
-		img.alt = ''
-		ship.appendChild(img)
-		layer.appendChild(ship)
-		ship._home = homes[team]
-		requestAnimationFrame(() => place(ship, homes[team].x, homes[team].y))
-	}
-}
-
-function place(elm, cx, cy) {
-	elm.style.transform = `translate(${cx - elm.offsetWidth / 2}px, ${cy - elm.offsetHeight / 2}px)`
-}
-
-async function moveTo(elm, cx, cy, dur) {
-	const to = `translate(${cx - elm.offsetWidth / 2}px, ${cy - elm.offsetHeight / 2}px)`
-	const from = elm.style.transform || to
-	await elm.animate([{ transform: from }, { transform: to }],
-		{ duration: dur, easing: 'cubic-bezier(.5,0,.3,1)' }).finished
-	elm.style.transform = to
-}
-
-function spark(layer, team, x, y) {
+// burst 스파크 (손그림, 팀색). px 지정 시 그 크기, 아니면 CSS 기본(착탄용).
+function spark(layer, team, x, y, px) {
 	const s = el('img', 'laser-spark')
 	s.src = `${BASE}/laser/burst-${team}.png`
 	s.style.left = `${x}px`
 	s.style.top = `${y}px`
+	if (px) s.style.width = `${px}px`
 	layer.appendChild(s)
 	s.animate(
 		[
@@ -97,14 +67,83 @@ function spark(layer, team, x, y) {
 	).finished.then(() => s.remove())
 }
 
-/**
- * 한 수 애니메이션.
- * @param {HTMLElement} board - .board (position:relative, .fx-layer 포함)
- * @param {{team:'p1'|'p2', pos:string, onImpact?:Function}} opts - pos = "A0"..
- */
-export async function playMove(board, { team, pos, onImpact }) {
+/** 우주선 게임 오브젝트 — 위치·크기·발사구를 스스로 관리. */
+class Ship {
+	constructor(layer, team, homeFrac) {
+		this.layer = layer
+		this.team = team
+		this.homeFrac = homeFrac // { fx, fy } — board 대비 비율
+		this.home = { x: 0, y: 0 }
+		this.x = 0
+		this.y = 0
+
+		this.el = el('div', 'ship')
+		this.el.dataset.team = team
+		this.img = el('img')
+		this.img.src = `${BASE}/ship/ship-${team}.png`
+		this.img.alt = ''
+		this.el.appendChild(this.img)
+		layer.appendChild(this.el)
+
+		// 이미지 로드 완료 = 크기 확정. 로드 전 offsetHeight=0 로 인한 위치 버그 방지.
+		this.ready = this.img.complete
+			? Promise.resolve()
+			: new Promise(res => this.img.addEventListener('load', res, { once: true }))
+	}
+
+	get w() { return this.el.offsetWidth }
+	get h() { return this.el.offsetHeight }
+
+	place(x, y) {
+		this.x = x
+		this.y = y
+		this.el.style.transform = `translate(${x - this.w / 2}px, ${y - this.h / 2}px)`
+	}
+
+	async moveTo(x, y, dur) {
+		const to = `translate(${x - this.w / 2}px, ${y - this.h / 2}px)`
+		const from = this.el.style.transform || to
+		await this.el.animate([{ transform: from }, { transform: to }],
+			{ duration: dur, easing: 'cubic-bezier(.5,0,.3,1)' }).finished
+		this.el.style.transform = to
+		this.x = x
+		this.y = y
+	}
+
+	// 캐릭터 기준 발사구(오프셋) — 배 아래쪽 중앙
+	muzzle() {
+		return { x: this.x, y: this.y + this.h * MUZZLE_DY }
+	}
+
+	resolveHome(board) {
+		this.home = { x: board.clientWidth * this.homeFrac.fx, y: board.clientHeight * this.homeFrac.fy }
+		return this.home
+	}
+}
+
+/** 팀별 Ship 을 마운트. 이미지 로드까지 대기 후 홈 배치. @returns {{p1:Ship,p2:Ship}} */
+export async function mountShips(board) {
 	const layer = board.querySelector('.fx-layer')
-	const ship = layer?.querySelector(`.ship[data-team="${team}"]`)
+	const ships = {
+		p1: new Ship(layer, 'p1', { fx: 0.5, fy: 0.04 }), // 상단 진영
+		p2: new Ship(layer, 'p2', { fx: 0.5, fy: 0.96 })  // 하단 진영
+	}
+	await Promise.all([ships.p1.ready, ships.p2.ready])
+	for (const s of Object.values(ships)) {
+		const h = s.resolveHome(board)
+		s.place(h.x, h.y)
+	}
+	return ships
+}
+
+/**
+ * 한 수 애니메이션 — 캐릭터(Ship) 기준.
+ * @param {HTMLElement} board - .board (position:relative, .fx-layer 포함)
+ * @param {Ship} ship - 발사 주체 캐릭터
+ * @param {{pos:string, onImpact?:Function}} opts - pos = "A0"..
+ */
+export async function playMove(board, ship, { pos, onImpact }) {
+	const layer = board.querySelector('.fx-layer')
 	const tile = board.querySelector(`.tile[data-pos="${pos}"]`)
 	if (!ship || !tile) { onImpact?.(); return }
 
@@ -113,53 +152,38 @@ export async function playMove(board, { team, pos, onImpact }) {
 	const cx = t.left - b.left + t.width / 2
 	const cyCenter = t.top - b.top + t.height / 2
 	const cyTop = t.top - b.top
-	const shipH = ship.offsetHeight
-	const airY = cyTop - t.height * 1.1 + shipH / 2 - FIRE_LIFT // 셀 위 "공중" (발사 시 20px 더 상승)
+	const airY = cyTop - t.height * 1.1 + ship.h / 2 - FIRE_LIFT // 셀 위 "공중"
 
 	// 1) 타겟 상공으로 이동
-	await moveTo(ship, cx, airY, 460)
+	await ship.moveTo(cx, airY, 460)
 
-	// 2) 레이저 발사 — 빔 draw+pulse + 하강 볼트 + 총구 스파크
-	const beamTop = airY + shipH * 0.5
-	const beamH = Math.max(cyCenter - beamTop, 0)
+	// 2) 발사 — 전부 캐릭터의 발사구(muzzle) 기준 (위치·크기 오프셋)
+	const m = ship.muzzle()
+	const beamH = Math.max(cyCenter - m.y, 0)
 
 	const beam = el('div', 'laser-beam')
-	beam.dataset.team = team
-	beam.style.left = `${cx}px`
-	beam.style.top = `${beamTop}px`
+	beam.dataset.team = ship.team
+	beam.style.left = `${m.x}px`
+	beam.style.top = `${m.y}px`
 	beam.style.height = `${beamH}px`
 	layer.appendChild(beam)
-	spark(layer, team, cx, beamTop) // 총구 스파크
-	// translateX(-50%) 로 cx 중앙정렬 (transform 애니가 base transform 을 덮으므로 키프레임에 포함)
+	spark(layer, ship.team, m.x, m.y, ship.w * MUZZLE_SPARK_K) // 총구 스파크(캐릭터 크기 기준)
 	beam.animate(
 		[
 			{ transform: 'translateX(-50%) scaleY(0) scaleX(1)', opacity: 0.3 },
 			{ transform: 'translateX(-50%) scaleY(1) scaleX(1)', opacity: 1, offset: 0.4 },
-			{ transform: 'translateX(-50%) scaleY(1) scaleX(1.8)', opacity: 1, offset: 0.6 }, // 펄스(굵어짐)
+			{ transform: 'translateX(-50%) scaleY(1) scaleX(1.8)', opacity: 1, offset: 0.6 },
 			{ transform: 'translateX(-50%) scaleY(1) scaleX(1)', opacity: 0 }
 		],
 		{ duration: 440, easing: 'ease-out' }
 	).finished.then(() => beam.remove())
 
-	const bolt = el('div', 'laser-bolt') // 빔을 타고 내려가는 탄
-	bolt.dataset.team = team
-	bolt.style.left = `${cx}px`
-	layer.appendChild(bolt)
-	bolt.animate(
-		[
-			{ transform: `translate(-50%, ${beamTop}px) scale(0.6)`, opacity: 1 },
-			{ transform: `translate(-50%, ${cyCenter}px) scale(1.15)`, opacity: 1, offset: 0.8 },
-			{ transform: `translate(-50%, ${cyCenter}px) scale(0.2)`, opacity: 0 }
-		],
-		{ duration: 190, easing: 'ease-in' }
-	).finished.then(() => bolt.remove())
-
 	await wait(150)
 
-	// 3) 착탄 → burst 스파크(대칭, 중앙정렬) + 플래시 + 세균 생성/이동
-	spark(layer, team, cx, cyCenter)
+	// 3) 착탄 → burst(대칭, 셀 중앙) + 플래시 + 세균 생성/이동
+	spark(layer, ship.team, cx, cyCenter)
 	const flash = el('div', 'impact-flash')
-	flash.dataset.team = team
+	flash.dataset.team = ship.team
 	flash.style.left = `${cx}px`
 	flash.style.top = `${cyCenter}px`
 	layer.appendChild(flash)
@@ -174,5 +198,5 @@ export async function playMove(board, { team, pos, onImpact }) {
 	await wait(130)
 
 	// 4) 귀환
-	await moveTo(ship, ship._home.x, ship._home.y, 460)
+	await ship.moveTo(ship.home.x, ship.home.y, 460)
 }

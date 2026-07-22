@@ -41,7 +41,7 @@ const s1 = document.getElementById('s1')
 const s2 = document.getElementById('s2')
 
 installFx()
-mountShips(board)
+let ships // { p1: Ship, p2: Ship } — mountShips 는 이미지 로드까지 대기(첫 발사 위치 버그 방지)
 
 function tile(pos) {
 	return board.querySelector(`.tile[data-pos="${pos}"]`)
@@ -105,14 +105,13 @@ function reset() {
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
 async function loop() {
-	// 최초 레이아웃 후 배치가 잡히도록 한 프레임 양보
-	await sleep(400)
+	// 우주선 이미지 로드 + 홈 배치 완료까지 대기 (첫 발사 위치 정확)
+	ships = await mountShips(board)
 	while (true) {
 		reset()
 		await sleep(700)
 		for (const move of SCRIPT) {
-			await playMove(board, {
-				team: move.team,
+			await playMove(board, ships[move.team], {
 				pos: move.pos,
 				onImpact: () => {
 					const { x, y } = posToXY(move.pos)

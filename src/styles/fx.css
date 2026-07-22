@@ -62,17 +62,6 @@
 	filter: drop-shadow(0 0 0.3em currentColor) drop-shadow(0 0 0.7em currentColor);
 }
 
-/* 하강 볼트 (빔을 타고 내려가는 밝은 탄) */
-.laser-bolt {
-	position: absolute;
-	width: 0.62em;
-	height: 1.4em;
-	border-radius: 50%;
-	background: radial-gradient(closest-side, #fff, currentColor 55%, transparent 78%);
-	filter: drop-shadow(0 0 0.45em currentColor);
-	will-change: transform, opacity;
-}
-
 /* 착탄 플래시 (셀에 퍼지는 빛) */
 .impact-flash {
 	position: absolute;
@@ -95,10 +84,8 @@
 
 /* 팀색 (currentColor 상속) + 빔 스프라이트 */
 .laser-beam[data-team="p1"],
-.laser-bolt[data-team="p1"],
 .impact-flash[data-team="p1"] { color: var(--p1); }
 .laser-beam[data-team="p2"],
-.laser-bolt[data-team="p2"],
 .impact-flash[data-team="p2"] { color: var(--p2); }
 .laser-beam[data-team="p1"] { background-image: url(/germ-warfare/assets/laser/beam-p1.png); }
 .laser-beam[data-team="p2"] { background-image: url(/germ-warfare/assets/laser/beam-p2.png); }
