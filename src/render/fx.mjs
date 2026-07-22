@@ -105,12 +105,13 @@ function groundHit(layer, team, x, y) {
 	g.style.left = `${x}px`
 	g.style.top = `${y}px`
 	layer.appendChild(g)
+	// 지면선(50% 88%)을 착탄점에 고정하고 위로 확대 (translate 로 지면선을 (x,y)에 정렬)
 	g.animate(
 		[
-			{ transform: 'translate(-50%,-50%) scale(0.4)', opacity: 1 },
-			{ transform: 'translate(-50%,-50%) scale(1.15)', opacity: 0 }
+			{ transform: 'translate(-50%,-88%) scale(0.3)', opacity: 1 },
+			{ transform: 'translate(-50%,-88%) scale(1.1)', opacity: 0 }
 		],
-		{ duration: 360, easing: 'ease-out' }
+		{ duration: 380, easing: 'ease-out' }
 	).finished.then(() => g.remove())
 }
 

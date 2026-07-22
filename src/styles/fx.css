@@ -62,11 +62,13 @@
 	filter: drop-shadow(0 0 0.3em currentColor) drop-shadow(0 0 0.7em currentColor);
 }
 
-/* 착탄 지면 스플래시 (laser_groundBurst, 손그림) — 3배 확대 */
+/* 착탄 지면 스플래시 (laser_groundBurst, 손그림) — 3배 확대.
+ * 지면선(스프라이트 하단 ~88%)을 착탄점에 고정하고 그 기준으로 위로 확대 → 자연스러움. */
 .laser-ground {
 	position: absolute;
 	width: 8.4em;
-	transform: translate(-50%, -50%);
+	transform-origin: 50% 88%; /* 지면선 기준 */
+	transform: translate(-50%, -88%) scale(0.3);
 	will-change: transform, opacity;
 	filter: drop-shadow(0 0 0.3em currentColor);
 }
