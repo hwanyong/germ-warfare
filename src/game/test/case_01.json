@@ -1,0 +1,134 @@
+{
+    "gameInfo": {
+      "boardSize": [7, 7],
+      "players": ["B", "W"],
+      "initialPositions": {
+        "B": [[0,0],[6,6]],
+        "W": [[0,6],[6,0]]
+      },
+      "rules": {
+        "clone": "Place a new piece in an adjacent (8 directions) empty cell",
+        "jump": "Move a piece up to 2 cells away into an empty cell (original piece is removed)",
+        "conversion": "After placing or jumping, all enemy pieces in the 3x3 area centered on the new piece become the current player's pieces",
+        "endCondition": "Game ends if no empty spaces remain OR if one player's pieces no longer exist"
+      }
+    },
+    "initialState": {
+      "currentPlayer": "B",
+      "board": [
+        ["B"," "," "," "," "," ","W"],
+        [" "," "," "," "," "," "," "],
+        [" "," "," "," "," "," "," "],
+        [" "," "," "," "," "," "," "],
+        [" "," "," "," "," "," "," "],
+        [" "," "," "," "," "," "," "],
+        ["W"," "," "," "," "," ","B"]
+      ]
+    },
+    "turns": [
+      {
+        "turnNumber": 1,
+        "player": "B",
+        "action": "jump",
+        "selectedPiece": [0,0],
+        "oldPosition": [0,0],
+        "newPiecePosition": [2,2],
+        "boardAfterAction": [
+          [" "," "," "," "," "," ","W"],
+          [" "," "," "," "," "," "," "],
+          [" "," ","B"," "," "," "," "],
+          [" "," "," "," "," "," "," "],
+          [" "," "," "," "," "," "," "],
+          [" "," "," "," "," "," "," "],
+          ["W"," "," "," "," "," ","B"]
+        ],
+        "conversionPositions": []
+      },
+      {
+        "turnNumber": 2,
+        "player": "W",
+        "action": "jump",
+        "selectedPiece": [0,6],
+        "oldPosition": [0,6],
+        "newPiecePosition": [2,4],
+        "boardAfterAction": [
+          [" "," "," "," "," "," "," "],
+          [" "," "," "," "," "," "," "],
+          [" "," ","B"," ","W"," "," "],
+          [" "," "," "," "," "," "," "],
+          [" "," "," "," "," "," "," "],
+          [" "," "," "," "," "," "," "],
+          ["W"," "," "," "," "," ","B"]
+        ],
+        "conversionPositions": []
+      },
+      {
+        "turnNumber": 3,
+        "player": "B",
+        "action": "jump",
+        "selectedPiece": [6,6],
+        "oldPosition": [6,6],
+        "newPiecePosition": [4,4],
+        "boardAfterAction": [
+          [" "," "," "," "," "," "," "],
+          [" "," "," "," "," "," "," "],
+          [" "," ","B"," ","W"," "," "],
+          [" "," "," "," "," "," "," "],
+          [" "," "," "," ","B"," "," "],
+          [" "," "," "," "," "," "," "],
+          ["W"," "," "," "," "," "," "]
+        ],
+        "conversionPositions": []
+      },
+      {
+        "turnNumber": 4,
+        "player": "W",
+        "action": "jump",
+        "selectedPiece": [6,0],
+        "oldPosition": [6,0],
+        "newPiecePosition": [4,2],
+        "boardAfterAction": [
+          [" "," "," "," "," "," "," "],
+          [" "," "," "," "," "," "," "],
+          [" "," ","B"," ","W"," "," "],
+          [" "," "," "," "," "," "," "],
+          [" "," ","W"," ","B"," "," "],
+          [" "," "," "," "," "," "," "],
+          [" "," "," "," "," "," "," "]
+        ],
+        "conversionPositions": []
+      },
+      {
+        "turnNumber": 5,
+        "player": "B",
+        "action": "clone",
+        "selectedPiece": [2,2],
+        "newPiecePosition": [3,3],
+        "boardAfterAction": [
+          [" "," "," "," "," "," "," "],
+          [" "," "," "," "," "," "," "],
+          [" "," ","B"," ","W"," "," "],
+          [" "," "," ","B"," "," "," "],
+          [" "," ","W"," ","B"," "," "],
+          [" "," "," "," "," "," "," "],
+          [" "," "," "," "," "," "," "]
+        ],
+        "conversionPositions": [[2,4],[4,2]],
+        "notes": "3x3 범위: (2,2)~(4,4) 내 W 말들이 B로 변환"
+      }
+    ],
+    "finalState": {
+      "board": [
+        [" "," "," "," "," "," "," "],
+        [" "," "," "," "," "," "," "],
+        [" "," ","B"," ","B"," "," "],
+        [" "," "," ","B"," "," "," "],
+        [" "," ","B"," ","B"," "," "],
+        [" "," "," "," "," "," "," "],
+        [" "," "," "," "," "," "," "]
+      ],
+      "currentPlayer": "W",
+      "gameOver": true,
+      "reason": "All W pieces converted to B"
+    }
+  }
