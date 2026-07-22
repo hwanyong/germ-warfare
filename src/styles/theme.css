@@ -1,0 +1,93 @@
+/* 디자인 테마 — "손그림 종이 보드게임" 아이덴티티 (기존 germwarfare 계승).
+ * 참고: docs/design.md, docs/decisions/ADR-008-visual-identity.md
+ *
+ * 에셋 경로는 base(/germ-warfare/)를 고정 접두. vite dev/prod 모두 동일하게 동작.
+ * (repo 이름 바뀌면 이 파일의 /germ-warfare/ 접두만 일괄 치환) */
+
+:root {
+	/* 팔레트 */
+	--ink: #2a2a2a;
+	--p1: #3add8d;        /* You  — 민트 그린 */
+	--p2: #f9606f;        /* AI   — 코랄 핑크 */
+	--p1-soft: #3add8d33;
+	--p2-soft: #f9606f33;
+	--paper-shade: #00000014;
+
+	/* 프레임 (손그림 border-image) */
+	--frame-thin: url(/germ-warfare/assets/frame/thin.png);
+	--frame-circle: url(/germ-warfare/assets/frame/circle.png);
+	--frame-square: url(/germ-warfare/assets/frame/square.png);
+
+	/* 세균 말 */
+	--cell-p1: url(/germ-warfare/assets/cell-green.png);
+	--cell-p2: url(/germ-warfare/assets/cell-pink.png);
+
+	/* 타이포 */
+	--font-num: 'Orbitron', sans-serif;   /* 점수/숫자 */
+	--font-title: 'Gugi', sans-serif;      /* 타이틀 */
+	--font-body: 'Dongle', 'Arial', sans-serif; /* 본문 */
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-user-drag: none;
+}
+
+html,
+body {
+	min-height: 100vh;
+}
+
+body {
+	color: var(--ink);
+	font-family: var(--font-body);
+	font-size: clamp(18px, 2.2vmin, 28px);
+
+	background-image: url(/germ-warfare/assets/paper.jpg);
+	background-repeat: repeat;
+	background-attachment: fixed;
+	background-size: 15em;
+
+	/* 손그림 커스텀 커서 (CSS만; 애니 그림자 커서는 후속 폴리시) */
+	cursor: url(/germ-warfare/assets/cursor/pointer3D.png) 2 2, auto;
+}
+
+/* 상호작용 요소 = 손 커서 */
+button,
+a,
+.clickable,
+[data-clickable] {
+	cursor: url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer;
+}
+
+h1,
+.title {
+	font-family: var(--font-title);
+}
+
+.num {
+	font-family: var(--font-num);
+	font-weight: 700;
+}
+
+/* 손그림 프레임 유틸 */
+.frame-thin {
+	border-image: var(--frame-thin) 9 / 0.2em / 0em;
+}
+.frame-circle {
+	border-image: var(--frame-circle) 62 / 1em / 0.1em;
+}
+
+/* 세균 말 (칸 소유 표시 / 뱃지) */
+.cell {
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: contain;
+}
+.cell[data-owner="p1"] { background-image: var(--cell-p1); }
+.cell[data-owner="p2"] { background-image: var(--cell-p2); }

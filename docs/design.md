@@ -1,0 +1,73 @@
+# Germ Warfare — 디자인 가이드
+
+> 비주얼 아이덴티티 SSOT. 결정 근거는 [`decisions/ADR-008-visual-identity.md`](decisions/ADR-008-visual-identity.md).
+> 토큰 구현은 [`../src/styles/theme.css`](../src/styles/theme.css).
+
+## 1. 아이덴티티 — "손그림 종이 보드게임"
+
+기존 GameRoomSystem 프로토타입의 미학을 **그대로 계승**한다. sci-fi 아님. 4요소:
+
+| 요소 | 실체 | 에셋 |
+|---|---|---|
+| 세균 말 | 굵은 먹선 카툰 블롭. **민트 그린(You) vs 코랄 핑크(AI)** | `cell-green.png` / `cell-pink.png` (+ `-sm`) |
+| 배경 | **한지(mulberry paper)** 텍스처 타일 반복 | `paper.jpg` |
+| 프레임 | **Kenney cartography** 손그림 border-image — 타일·버튼·패널을 액자화 (**시그니처**) | `frame/{thin,circle,square,arrow}.png` |
+| 타이포 | **Orbitron**(숫자/점수) · **Gugi**(타이틀) · **Dongle**(본문 한글) | Google Fonts |
+| 커서/인터랙션 | 손그림 커스텀 커서 · 버튼 hover 확대/active 축소 · ripple 로딩 | `cursor/*` |
+
+## 2. 토큰 (theme.css)
+
+```
+--ink #2a2a2a   --p1 #3add8d(You/그린)   --p2 #f9606f(AI/핑크)   한지 배경
+--frame-thin(타일) --frame-circle(버튼) --frame-square(패널)
+--font-num Orbitron  --font-title Gugi  --font-body Dongle
+```
+색 hex는 스프라이트에서 근사 추출 — P0에서 정밀 샘플 후 확정.
+
+## 3. 레이아웃 전환 (3열 오버레이 → 보드 중심 반응형)
+
+기존은 Twitch 스트림 오버레이용 3열(플레이어 채팅 | 보드 | 라이벌 채팅), 모바일 차단.
+데모는 **보드 중심 단일열 + 반응형**(모바일 포함 — 도달률):
+
+```
+┌───────────────────────────┐
+│   🟢 You  12 : 8  AI 🔴    │  컴팩트 HUD (턴 표시)
+│   ┌───────────────────┐   │
+│   │   보드 7×7 정사각   │   │  min(92vmin,560px), 화면 채움
+│   └───────────────────┘   │
+│   [설정]        [메뉴]     │
+└───────────────────────────┘
+```
+
+## 4. 에셋 처리 (생존 / 전용 / 폐기)
+
+- ✅ **생존**: 세균 말, 한지 배경, 커서, crosshair(합법수 표시), 손그림 프레임(실사용 4종),
+  폰트, 보드 grid·score 뱃지·START 버튼·ripple.
+- 🔄 **전용**: 세팅폼(VS+타이머+START) → 난이도/스테이지 선택 · `alien_walk` 뷰어 → 마스코트 세균.
+- ❌ **폐기**: 채팅 패널·vote UI·cuttingline · 스트리머/뷰어(viewerCrowd) · twitch 로고/색·AdSense ·
+  ship 아바타 · 3열 레이아웃 · cartography 나머지 100+개(미복사).
+
+## 5. 복사된 에셋 (`public/assets/`, 린 20종 · 232K)
+
+```
+cell-{green,pink}.png, cell-{green,pink}-sm.png, dome.png, paper.jpg
+cursor/{pointer3D,hand,pointerFlat}(+_shadow).png
+crosshair/{aim-move,aim-clone}.png
+frame/{thin,circle,square,arrow}.png
+mascot/germ-{green,pink}.webp
+```
+전체 팩(150+)이 아니라 **실사용만** 복사(린 유지). twitch/ship/AdSense 제외.
+
+## 6. 화면별 적용 (P0~)
+
+- **타이틀/메뉴**: Gugi "세균전" + 마스코트 세균 + 원형 프레임 버튼 `[시작][스테이지][설정]`.
+- **난이도 선택**: 세팅폼 프레임 재활용, Easy/Normal/Hard 카드(그린/핑크 아트), "vs AI".
+- **보드**: `frame-thin` 타일 + `cell` 소유 표시 + hover 시 crosshair(합법수만) + AI 턴 핑크 자동착수 +
+  감염 뒤집기 애니(cell 스케일).
+- **결과**: score 뱃지 확대 + 승자 세균 + `[재대결]`.
+
+## 7. 미래 폴리시 (선택)
+
+- CSS 커서 → 그림자 포함 애니 div 커서(기존 방식) 승격.
+- 축 라벨(A–G / 0–6) 재도입.
+- 감염/이동 모션, 사운드.
