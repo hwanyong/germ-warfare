@@ -62,17 +62,6 @@
 	filter: drop-shadow(0 0 0.3em currentColor) drop-shadow(0 0 0.7em currentColor);
 }
 
-/* 착탄 지면 스플래시 (laser_groundBurst, 손그림) — 3배 확대.
- * 지면선(스프라이트 하단 ~88%)을 착탄점에 고정하고 그 기준으로 위로 확대 → 자연스러움. */
-.laser-ground {
-	position: absolute;
-	width: 8.4em;
-	transform-origin: 50% 88%; /* 지면선 기준 */
-	transform: translate(-50%, -88%) scale(0.3);
-	will-change: transform, opacity;
-	filter: drop-shadow(0 0 0.3em currentColor);
-}
-
 /* 하강 볼트 (빔을 타고 내려가는 밝은 탄) */
 .laser-bolt {
 	position: absolute;
@@ -95,7 +84,8 @@
 	will-change: transform, opacity;
 }
 
-/* burst 스파크 (손그림, 팀색) — 3배 확대 */
+/* burst 스파크 (손그림, 팀색) — 총구·착탄 공통. 대칭이라 translate(-50%,-50%)
+ * 중앙정렬만으로 항상 정확(앵커 버그 예방). — 3배 확대 */
 .laser-spark {
 	position: absolute;
 	width: 6.6em;
@@ -106,12 +96,10 @@
 /* 팀색 (currentColor 상속) + 빔 스프라이트 */
 .laser-beam[data-team="p1"],
 .laser-bolt[data-team="p1"],
-.impact-flash[data-team="p1"],
-.laser-ground[data-team="p1"] { color: var(--p1); }
+.impact-flash[data-team="p1"] { color: var(--p1); }
 .laser-beam[data-team="p2"],
 .laser-bolt[data-team="p2"],
-.impact-flash[data-team="p2"],
-.laser-ground[data-team="p2"] { color: var(--p2); }
+.impact-flash[data-team="p2"] { color: var(--p2); }
 .laser-beam[data-team="p1"] { background-image: url(/germ-warfare/assets/laser/beam-p1.png); }
 .laser-beam[data-team="p2"] { background-image: url(/germ-warfare/assets/laser/beam-p2.png); }
 
