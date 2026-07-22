@@ -5,6 +5,7 @@
 // 참고: docs/design.md §애니메이션
 
 const BASE = '/germ-warfare/assets'
+const FIRE_LIFT = 20 // 발사 시 우주선을 이만큼(px) 더 높이 띄운다
 
 const el = (tag, cls) => {
 	const n = document.createElement(tag)
@@ -101,30 +102,63 @@ export async function playMove(board, { team, pos, onImpact }) {
 	const cyCenter = t.top - b.top + t.height / 2
 	const cyTop = t.top - b.top
 	const shipH = ship.offsetHeight
-	const airY = cyTop - t.height * 1.1 + shipH / 2 // 셀 위 "공중"
+	const airY = cyTop - t.height * 1.1 + shipH / 2 - FIRE_LIFT // 셀 위 "공중" (발사 시 20px 더 상승)
 
 	// 1) 타겟 상공으로 이동
 	await moveTo(ship, cx, airY, 460)
 
-	// 2) 레이저 발사
+	// 2) 레이저 발사 — 빔 draw+pulse + 하강 볼트 + 총구 스파크
 	const beamTop = airY + shipH * 0.5
+	const beamH = Math.max(cyCenter - beamTop, 0)
+
 	const beam = el('div', 'laser-beam')
 	beam.dataset.team = team
 	beam.style.left = `${cx}px`
 	beam.style.top = `${beamTop}px`
-	beam.style.height = `${Math.max(cyCenter - beamTop, 0)}px`
+	beam.style.height = `${beamH}px`
 	layer.appendChild(beam)
 	spark(layer, team, cx, beamTop) // 총구 스파크
-	await beam.animate(
-		[{ transform: 'scaleY(0)', opacity: 0 }, { transform: 'scaleY(1)', opacity: 1 }],
-		{ duration: 130, easing: 'ease-out' }
-	).finished
+	beam.animate(
+		[
+			{ transform: 'scaleY(0) scaleX(1)', opacity: 0.3 },
+			{ transform: 'scaleY(1) scaleX(1)', opacity: 1, offset: 0.4 },
+			{ transform: 'scaleY(1) scaleX(1.8)', opacity: 1, offset: 0.6 }, // 펄스(굵어짐)
+			{ transform: 'scaleY(1) scaleX(1)', opacity: 0 }
+		],
+		{ duration: 440, easing: 'ease-out' }
+	).finished.then(() => beam.remove())
 
-	// 3) 착탄 → 세균 생성/이동
-	spark(layer, team, cx, cyCenter) // 착탄 스파크
+	const bolt = el('div', 'laser-bolt') // 빔을 타고 내려가는 탄
+	bolt.dataset.team = team
+	bolt.style.left = `${cx}px`
+	layer.appendChild(bolt)
+	bolt.animate(
+		[
+			{ transform: `translate(-50%, ${beamTop}px) scale(0.6)`, opacity: 1 },
+			{ transform: `translate(-50%, ${cyCenter}px) scale(1.15)`, opacity: 1, offset: 0.8 },
+			{ transform: `translate(-50%, ${cyCenter}px) scale(0.2)`, opacity: 0 }
+		],
+		{ duration: 190, easing: 'ease-in' }
+	).finished.then(() => bolt.remove())
+
+	await wait(150)
+
+	// 3) 착탄 → 플래시 + 스파크 + 세균 생성/이동
+	spark(layer, team, cx, cyCenter)
+	const flash = el('div', 'impact-flash')
+	flash.dataset.team = team
+	flash.style.left = `${cx}px`
+	flash.style.top = `${cyCenter}px`
+	layer.appendChild(flash)
+	flash.animate(
+		[
+			{ transform: 'translate(-50%,-50%) scale(0.2)', opacity: 1 },
+			{ transform: 'translate(-50%,-50%) scale(1.5)', opacity: 0 }
+		],
+		{ duration: 300, easing: 'ease-out' }
+	).finished.then(() => flash.remove())
 	onImpact?.()
-	beam.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160 }).finished.then(() => beam.remove())
-	await wait(140)
+	await wait(130)
 
 	// 4) 귀환
 	await moveTo(ship, ship._home.x, ship._home.y, 460)

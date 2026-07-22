@@ -47,17 +47,37 @@
 	50%      { transform: translateY(-0.28em) rotate(1.5deg); }
 }
 
-/* 레이저 빔 (팀색 그라디언트, 세로) */
+/* 레이저 빔 (팀색 코어 + 글로우, 세로) */
 .laser-beam {
 	position: absolute;
-	width: 0.28em;
+	width: 0.32em;
 	transform-origin: top center;
-	border-radius: 0.14em;
-	filter: blur(0.4px) drop-shadow(0 0 0.3em currentColor);
-	background: linear-gradient(to bottom, transparent, currentColor 30%, #fff 55%, currentColor 80%, transparent);
+	border-radius: 0.16em;
+	filter: drop-shadow(0 0 0.35em currentColor) drop-shadow(0 0 0.8em currentColor);
+	background: linear-gradient(to bottom, transparent, currentColor 18%, #fff 50%, currentColor 82%, transparent);
 }
-.laser-beam[data-team="p1"] { color: var(--p1); }
-.laser-beam[data-team="p2"] { color: var(--p2); }
+
+/* 하강 볼트 (빔을 타고 내려가는 밝은 탄) */
+.laser-bolt {
+	position: absolute;
+	width: 0.62em;
+	height: 1.4em;
+	border-radius: 50%;
+	background: radial-gradient(closest-side, #fff, currentColor 55%, transparent 78%);
+	filter: drop-shadow(0 0 0.45em currentColor);
+	will-change: transform, opacity;
+}
+
+/* 착탄 플래시 (셀에 퍼지는 빛) */
+.impact-flash {
+	position: absolute;
+	width: 2.6em;
+	height: 2.6em;
+	border-radius: 50%;
+	background: radial-gradient(closest-side, #fff, currentColor 42%, transparent 72%);
+	filter: drop-shadow(0 0 0.4em currentColor);
+	will-change: transform, opacity;
+}
 
 /* burst 스파크 (손그림, 팀색) */
 .laser-spark {
@@ -66,6 +86,14 @@
 	transform: translate(-50%, -50%);
 	will-change: transform, opacity;
 }
+
+/* 팀색 (currentColor 상속) */
+.laser-beam[data-team="p1"],
+.laser-bolt[data-team="p1"],
+.impact-flash[data-team="p1"] { color: var(--p1); }
+.laser-beam[data-team="p2"],
+.laser-bolt[data-team="p2"],
+.impact-flash[data-team="p2"] { color: var(--p2); }
 
 @media (prefers-reduced-motion: reduce) {
 	.cell { filter: none; animation: none; }
