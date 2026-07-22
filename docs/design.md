@@ -66,8 +66,27 @@ mascot/germ-{green,pink}.webp
   감염 뒤집기 애니(cell 스케일).
 - **결과**: score 뱃지 확대 + 승자 세균 + `[재대결]`.
 
-## 7. 미래 폴리시 (선택)
+## 7. 애니메이션 (구현됨 — src/render/fx.mjs, src/styles/fx.css)
+
+### 이동 (우주선 + 레이저)
+각 진영은 UFO 탄 세균 캐릭터(`ship/ship-p1|p2.png`)를 홈(상단/하단 중앙)에 둔다.
+한 수 = `playMove(board, {team, pos, onImpact})` 시퀀스 (WAAPI Promise 순차):
+1. 홈 → **타겟 셀 상공**("공중")으로 이동 (460ms, ease)
+2. **레이저 하강** (팀색 그라디언트 빔, scaleY 130ms) + 총구/착탄 **스파크**(`laser/burst-*.png`)
+3. **착탄 = onImpact** → `map.setField` → 세균 **pop** 생성 (감염 반영 재동기화)
+4. **귀환** (460ms). idle 시 ship-bob 으로 부유.
+
+### 세균 idle 울렁임
+- **외곽선 울렁**: SVG `feTurbulence`+`feDisplacementMap`(`#germ-wobble`, baseFrequency SMIL 애니) →
+  래스터 블롭 외곽선이 유기적으로 undulate. `installFx()` 가 1회 주입.
+- **숨쉬기**: CSS `germ-breathe`(scale 1↔1.055), per-cell `animation-delay` 랜덤 위상.
+- `prefers-reduced-motion: reduce` 시 전부 off.
+
+> 데모(`main.mjs`)가 이 애니를 셀프플레이로 시연. P0의 `src/render`/`src/match` 가
+> 클릭 인터랙션에 `playMove` 를 연결한다(합법수 hover=crosshair → 클릭 → playMove → setField).
+
+## 8. 미래 폴리시 (선택)
 
 - CSS 커서 → 그림자 포함 애니 div 커서(기존 방식) 승격.
 - 축 라벨(A–G / 0–6) 재도입.
-- 감염/이동 모션, 사운드.
+- 이동(JUMP) 시 원본 세균 소멸 모션, 사운드, 우주선 오프보드 파킹(현재 홈이 보드 가장자리와 겹침).
