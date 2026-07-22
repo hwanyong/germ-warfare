@@ -14,7 +14,8 @@
 - **`src/game` = 규칙 엔진 SSOT** — 순수·무의존(I/O 0). 클라·AI·(미래)서버가 동일 코드 사용. inline 재구현 금지.
 - 규칙의 무작위는 시드 PRNG(`src/game/rng.mjs`)로만 — `Math.random` 직접 사용 금지(결정성).
 - **이식 자산**(`src/game`, `src/ai`, `src/render`)은 순수·클린 유지 — 미래 멀티플레이 앱이 재사용(ADR-005).
-- 에셋은 `public/assets/` 에 실사용만 린하게. **데드 에셋 금지**(복사만 하고 미배선 X).
+- 에셋은 `public/assets/`. 활성(배선) 에셋은 린하게, 배경/이펙트 라이브러리(cartography 등)는 별도 보관.
+  **에셋 고를 땐 이미지 재분석 말고 [`docs/assets.md`](docs/assets.md) 카탈로그 참조**(114개 상세 묘사·구별점).
 
 ## 배포
 
