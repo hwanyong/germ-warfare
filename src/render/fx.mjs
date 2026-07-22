@@ -147,12 +147,13 @@ export async function playMove(board, { team, pos, onImpact }) {
 	beam.style.height = `${beamH}px`
 	layer.appendChild(beam)
 	spark(layer, team, cx, beamTop) // 총구 스파크
+	// translateX(-50%) 로 cx 중앙정렬 (transform 애니가 base transform 을 덮으므로 키프레임에 포함)
 	beam.animate(
 		[
-			{ transform: 'scaleY(0) scaleX(1)', opacity: 0.3 },
-			{ transform: 'scaleY(1) scaleX(1)', opacity: 1, offset: 0.4 },
-			{ transform: 'scaleY(1) scaleX(1.8)', opacity: 1, offset: 0.6 }, // 펄스(굵어짐)
-			{ transform: 'scaleY(1) scaleX(1)', opacity: 0 }
+			{ transform: 'translateX(-50%) scaleY(0) scaleX(1)', opacity: 0.3 },
+			{ transform: 'translateX(-50%) scaleY(1) scaleX(1)', opacity: 1, offset: 0.4 },
+			{ transform: 'translateX(-50%) scaleY(1) scaleX(1.8)', opacity: 1, offset: 0.6 }, // 펄스(굵어짐)
+			{ transform: 'translateX(-50%) scaleY(1) scaleX(1)', opacity: 0 }
 		],
 		{ duration: 440, easing: 'ease-out' }
 	).finished.then(() => beam.remove())
