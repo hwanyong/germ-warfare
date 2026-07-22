@@ -14,25 +14,37 @@ const el = (tag, cls) => {
 }
 const wait = ms => new Promise(r => setTimeout(r, ms))
 
-/** 세균 외곽선 울렁임용 SVG feTurbulence 변위필터를 1회 주입 */
+/** 세균 외곽선 울렁임용 SVG feTurbulence 변위필터 풀(8종)을 1회 주입.
+ * 각 변종은 seed(패턴)·dur(주기)·begin(위상)이 달라, 세포마다 랜덤 배정하면
+ * 전체가 불규칙하게 울렁인다(동기 방지). */
+export const WOBBLE_VARIANTS = 8
+
 export function installFx() {
-	if (document.querySelector('#germ-wobble')) return
+	if (document.querySelector('#germ-wobble-0')) return
 	const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
 	svg.setAttribute('aria-hidden', 'true')
 	svg.setAttribute('width', '0')
 	svg.setAttribute('height', '0')
 	svg.style.position = 'absolute'
-	svg.innerHTML = `
-		<defs>
-			<filter id="germ-wobble" x="-20%" y="-20%" width="140%" height="140%">
-				<feTurbulence type="fractalNoise" baseFrequency="0.018 0.024" numOctaves="1" seed="7" result="n">
-					<animate attributeName="baseFrequency" dur="7s"
-						values="0.018 0.024; 0.024 0.017; 0.018 0.024" repeatCount="indefinite" />
+
+	let defs = ''
+	for (let i = 0; i < WOBBLE_VARIANTS; i++) {
+		const seed = i * 17 + 3
+		const bf = (0.016 + i * 0.0012).toFixed(4)
+		const bf2 = (+bf + 0.006).toFixed(4)
+		const dur = (5.5 + i * 0.55).toFixed(2) // 5.5~9.4s 서로 다른 주기
+		const begin = (-i * 0.83).toFixed(2)    // 위상 오프셋
+		defs += `
+			<filter id="germ-wobble-${i}" x="-20%" y="-20%" width="140%" height="140%">
+				<feTurbulence type="fractalNoise" baseFrequency="${bf} ${bf2}" numOctaves="1" seed="${seed}" result="n">
+					<animate attributeName="baseFrequency" dur="${dur}s" begin="${begin}s"
+						values="${bf} ${bf2}; ${bf2} ${bf}; ${bf} ${bf2}" repeatCount="indefinite" />
 				</feTurbulence>
 				<feDisplacementMap in="SourceGraphic" in2="n" scale="4.5"
 					xChannelSelector="R" yChannelSelector="G" />
-			</filter>
-		</defs>`
+			</filter>`
+	}
+	svg.innerHTML = `<defs>${defs}</defs>`
 	document.body.appendChild(svg)
 }
 

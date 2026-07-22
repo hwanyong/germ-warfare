@@ -4,22 +4,26 @@
 /* ---------- 세균 idle (외곽선 울렁 + 숨쉬기) ---------- */
 /* 외곽선 울렁임 = SVG feTurbulence 변위필터 (fx.mjs installFx 가 #germ-wobble 주입).
  * 숨쉬기 = CSS scale. per-cell 위상은 fx.mjs 가 animation-delay 로 랜덤화. */
+/* 주기(--bd)·위상(--bdelay)은 fx/main 에서 per-cell 랜덤 주입 → 불규칙 숨쉬기.
+ * 울렁임 필터는 변종 클래스 w0..w7 중 랜덤 배정 → 불규칙 외곽선.
+ * 생성 pop 은 WAAPI(JS)로 처리 → CSS 숨쉬기와 합성(덮어쓰기 아님). */
 .cell {
-	filter: url(#germ-wobble);
-	animation: germ-breathe 3.2s ease-in-out infinite;
+	filter: url(#germ-wobble-0);
+	animation: germ-breathe var(--bd, 3.2s) ease-in-out infinite var(--bdelay, 0s);
 	transform-origin: center;
 }
+.cell.w0 { filter: url(#germ-wobble-0); }
+.cell.w1 { filter: url(#germ-wobble-1); }
+.cell.w2 { filter: url(#germ-wobble-2); }
+.cell.w3 { filter: url(#germ-wobble-3); }
+.cell.w4 { filter: url(#germ-wobble-4); }
+.cell.w5 { filter: url(#germ-wobble-5); }
+.cell.w6 { filter: url(#germ-wobble-6); }
+.cell.w7 { filter: url(#germ-wobble-7); }
 @keyframes germ-breathe {
 	0%, 100% { transform: scale(1); }
 	50%      { transform: scale(1.055); }
 }
-/* 생성 pop */
-@keyframes germ-pop {
-	0%   { transform: scale(0); }
-	70%  { transform: scale(1.18); }
-	100% { transform: scale(1); }
-}
-.cell.pop { animation: germ-pop 0.32s cubic-bezier(.3,1.3,.5,1) 1, germ-breathe 3.2s ease-in-out infinite 0.32s; }
 
 /* ---------- 우주선 / 레이저 레이어 ---------- */
 .fx-layer {
@@ -96,6 +100,6 @@
 .impact-flash[data-team="p2"] { color: var(--p2); }
 
 @media (prefers-reduced-motion: reduce) {
-	.cell { filter: none; animation: none; }
+	.cell { filter: none !important; animation: none !important; }
 	.ship > img { animation: none; }
 }

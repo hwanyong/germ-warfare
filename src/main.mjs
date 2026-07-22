@@ -9,7 +9,7 @@ import './styles/theme.css'
 import './styles/board.css'
 import './styles/fx.css'
 import { GameMap, USERS } from './game/index.mjs'
-import { installFx, mountShips, playMove } from './render/fx.mjs'
+import { installFx, mountShips, playMove, WOBBLE_VARIANTS } from './render/fx.mjs'
 
 const ROWS = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
 const teamUser = t => (t === 'p1' ? USERS.ID0 : USERS.ID1)
@@ -56,12 +56,20 @@ function syncTile(pos, { pop = false } = {}) {
 	if (!owner) { cell?.remove(); return }
 	if (!cell) {
 		cell = document.createElement('div')
-		cell.className = 'cell'
-		cell.style.animationDelay = `${(Math.random() * -3).toFixed(2)}s` // 위상 랜덤
+		// 불규칙 idle: 울렁 변종(w0..)·숨쉬기 주기·위상 전부 per-cell 랜덤
+		cell.className = `cell w${Math.floor(Math.random() * WOBBLE_VARIANTS)}`
+		cell.style.setProperty('--bd', `${(2.6 + Math.random() * 1.8).toFixed(2)}s`)
+		cell.style.setProperty('--bdelay', `${(Math.random() * -4).toFixed(2)}s`)
 		t.appendChild(cell)
 	}
 	cell.dataset.owner = owner
-	if (pop) { cell.classList.remove('pop'); void cell.offsetWidth; cell.classList.add('pop') }
+	if (pop) {
+		// 생성 pop — WAAPI(CSS 숨쉬기와 합성, 랜덤 위상 유지)
+		cell.animate(
+			[{ transform: 'scale(0)' }, { transform: 'scale(1.18)', offset: 0.7 }, { transform: 'scale(1)' }],
+			{ duration: 320, easing: 'cubic-bezier(.3,1.3,.5,1)' }
+		)
+	}
 }
 
 function syncAll() {
