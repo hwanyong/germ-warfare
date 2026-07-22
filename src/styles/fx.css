@@ -51,14 +51,24 @@
 	50%      { transform: translateY(-0.28em) rotate(1.5deg); }
 }
 
-/* 레이저 빔 (팀색 코어 + 글로우, 세로) */
+/* 레이저 빔 — 손그림 스프라이트(laser1) 세로 stretch + 글로우 */
 .laser-beam {
 	position: absolute;
-	width: 0.32em;
+	width: 0.5em;
 	transform-origin: top center;
-	border-radius: 0.16em;
-	filter: drop-shadow(0 0 0.35em currentColor) drop-shadow(0 0 0.8em currentColor);
-	background: linear-gradient(to bottom, transparent, currentColor 18%, #fff 50%, currentColor 82%, transparent);
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 100% 100%; /* 빔 높이에 맞춰 세로 늘림 */
+	filter: drop-shadow(0 0 0.3em currentColor) drop-shadow(0 0 0.7em currentColor);
+}
+
+/* 착탄 지면 스플래시 (laser_groundBurst, 손그림) */
+.laser-ground {
+	position: absolute;
+	width: 2.8em;
+	transform: translate(-50%, -50%);
+	will-change: transform, opacity;
+	filter: drop-shadow(0 0 0.3em currentColor);
 }
 
 /* 하강 볼트 (빔을 타고 내려가는 밝은 탄) */
@@ -91,13 +101,17 @@
 	will-change: transform, opacity;
 }
 
-/* 팀색 (currentColor 상속) */
+/* 팀색 (currentColor 상속) + 빔 스프라이트 */
 .laser-beam[data-team="p1"],
 .laser-bolt[data-team="p1"],
-.impact-flash[data-team="p1"] { color: var(--p1); }
+.impact-flash[data-team="p1"],
+.laser-ground[data-team="p1"] { color: var(--p1); }
 .laser-beam[data-team="p2"],
 .laser-bolt[data-team="p2"],
-.impact-flash[data-team="p2"] { color: var(--p2); }
+.impact-flash[data-team="p2"],
+.laser-ground[data-team="p2"] { color: var(--p2); }
+.laser-beam[data-team="p1"] { background-image: url(/germ-warfare/assets/laser/beam-p1.png); }
+.laser-beam[data-team="p2"] { background-image: url(/germ-warfare/assets/laser/beam-p2.png); }
 
 @media (prefers-reduced-motion: reduce) {
 	.cell { filter: none !important; animation: none !important; }

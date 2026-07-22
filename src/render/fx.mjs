@@ -97,6 +97,23 @@ function spark(layer, team, x, y) {
 	).finished.then(() => s.remove())
 }
 
+// 착탄 지면 스플래시 (laser_groundBurst 스프라이트)
+function groundHit(layer, team, x, y) {
+	const g = el('img', 'laser-ground')
+	g.src = `${BASE}/laser/ground-${team}.png`
+	g.dataset.team = team
+	g.style.left = `${x}px`
+	g.style.top = `${y}px`
+	layer.appendChild(g)
+	g.animate(
+		[
+			{ transform: 'translate(-50%,-50%) scale(0.4)', opacity: 1 },
+			{ transform: 'translate(-50%,-50%) scale(1.15)', opacity: 0 }
+		],
+		{ duration: 360, easing: 'ease-out' }
+	).finished.then(() => g.remove())
+}
+
 /**
  * 한 수 애니메이션.
  * @param {HTMLElement} board - .board (position:relative, .fx-layer 포함)
@@ -155,8 +172,8 @@ export async function playMove(board, { team, pos, onImpact }) {
 
 	await wait(150)
 
-	// 3) 착탄 → 플래시 + 스파크 + 세균 생성/이동
-	spark(layer, team, cx, cyCenter)
+	// 3) 착탄 → 지면 스플래시 + 플래시 + 세균 생성/이동
+	groundHit(layer, team, cx, cyCenter)
 	const flash = el('div', 'impact-flash')
 	flash.dataset.team = team
 	flash.style.left = `${cx}px`
