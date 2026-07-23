@@ -297,14 +297,19 @@ export function playScene(ctx) {
 		while (running) {
 			while (paused && running) await sleep(120)
 			if (!running) return
-			if (map.isTerminal()) return finishGame()
-
-			// 자동 마무리: 둘 수 있는 팀이 단 하나뿐이면(나머지 생존팀 전부 무수)
+			// 승부 확정 검사 — 전멸(생존≤1) 또는 단독 가동(둘 수 있는 팀 1)이면
+			// 빈칸이 남아있는 한 승자 우주선이 자동 채움(Ataxx 잔여칸 귀속) 후 종료
 			{
 				const alive = ENGINE_TEAMS.filter(u => map.count[u] > 0)
 				const canMove = alive.filter(u => map.legalMoves(u).length > 0)
-				if (alive.length >= 2 && canMove.length === 1) return autoFinish(canMove[0])
+				if (alive.length <= 1 || canMove.length <= 1) {
+					const filler = canMove[0] // 전멸 시 = 유일 생존팀, 갇힘 시 = 유일 가동팀
+					const empties = map.totalCells - ENGINE_TEAMS.reduce((a, u) => a + map.count[u], 0)
+					if (filler && empties > 0) return autoFinish(filler)
+					return finishGame()
+				}
 			}
+			if (map.isTerminal()) return finishGame()
 
 			const cur = ENGINE_TEAMS[idx % ENGINE_TEAMS.length]
 			idx++
