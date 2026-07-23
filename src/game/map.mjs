@@ -331,6 +331,10 @@ class GameMap {
 		}))
 		return out
 	}
+	/** 타겟 칸의 원본 risk 점수표 조회 — { [USERS.ID0]:n, [USERS.ID1]:n }.
+	 * risk[P] = P 가 그 칸에서 받는 적 근접 압박(거리 가중 6−d 합). 높을수록 위험/노출. */
+	riskAt = ({ x, y }) => ({ ...this.#fields[y][x].score.risk })
+
 	/** 소스→타겟 적용. CLONE(거리1, 원본유지) / MOVE(거리2, 원본소멸) + 감염. @returns 'clone'|'move' */
 	applyMove = (userId, from, to) => {
 		const legal = this.legalMovesFrom(userId, from).find(m => m.x === to.x && m.y === to.y)
@@ -416,4 +420,56 @@ class GameMap {
 	}
 }
 
-export { GameMap, USERS }
+//#region D: 경량 그리드 시뮬 (AI 룩어헤드 전용)
+// owner 2D 그리드(map.fields 사본)만 다루는 순수 함수들. 규칙은 위 Field/GameMap 과
+// 동일해야 한다(CLONE 거리1 원본유지 / MOVE 거리2 원본소멸 / 감염=거리1 적 뒤집기).
+// 규칙 SSOT 유지를 위해 이 파일에 함께 둔다.
+
+const SIZE = 7
+const rivalOf = u => (u === USERS.ID0 ? USERS.ID1 : USERS.ID0)
+
+/** map.fields 딥클론 */
+const cloneGrid = grid => grid.map(row => row.slice())
+
+/** 그리드에서 userId 의 모든 (from,to) 합법수 */
+function gridMoves(grid, userId) {
+	const out = []
+	for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
+		if (grid[y][x] !== userId) continue
+		for (let ty = Math.max(0, y - 2); ty <= Math.min(SIZE - 1, y + 2); ty++)
+			for (let tx = Math.max(0, x - 2); tx <= Math.min(SIZE - 1, x + 2); tx++) {
+				if (grid[ty][tx] !== null) continue
+				const d = Math.max(Math.abs(tx - x), Math.abs(ty - y))
+				if (d === 1 || d === 2) out.push({ from: { x, y }, to: { x: tx, y: ty }, clone: d === 1 })
+			}
+	}
+	return out
+}
+
+/** 그리드에 수 적용(새 그리드 반환) — CLONE/MOVE + 감염 */
+function gridApply(grid, userId, from, to) {
+	const g = cloneGrid(grid)
+	const d = Math.max(Math.abs(to.x - from.x), Math.abs(to.y - from.y))
+	g[to.y][to.x] = userId
+	if (d === 2) g[from.y][from.x] = null // MOVE: 원본 소멸
+	const enemy = rivalOf(userId)
+	for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+		const ny = to.y + dy, nx = to.x + dx
+		if (g[ny]?.[nx] === enemy) g[ny][nx] = userId // 감염
+	}
+	return g
+}
+
+/** 말수차 = count(me) − count(enemy) */
+function gridMaterial(grid, userId) {
+	let me = 0, en = 0
+	const enemy = rivalOf(userId)
+	for (const row of grid) for (const o of row) {
+		if (o === userId) me++
+		else if (o === enemy) en++
+	}
+	return me - en
+}
+//#endregion
+
+export { GameMap, USERS, cloneGrid, gridMoves, gridApply, gridMaterial, rivalOf }

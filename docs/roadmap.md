@@ -62,7 +62,7 @@
 - **C1 cartography 마을 배경 레이어**: 스테이지 데이터대로 셀 아래 건물 배치 → **점령 시 파괴 스왑**(ruins/skull, `assets.md` 활용) + **infect 뒤집기 애니**.
 - **C2** 프레임/커서 전상태, Result 폴리시(승자 세균, score 뱃지). → "모든 에셋 쓸모 시연" 완성.
 
-### PHASE D — AI + 3난이도  [3-2]
+### PHASE D — AI + 3난이도  [3-2]  ✅ 완료
 - **D1 엔진 E3(simulateMove)**.
 - **D2 AI**: legalMoves→simulate→eval(말수차+infect이득+risk+mobility+코너)→negamax+αβ.
 - **D3 3난이도**(깊이/휴리스틱/블런더율/think-time) + 시드 블런더 무작위. StageSelect/Settings에서 선택.

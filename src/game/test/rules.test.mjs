@@ -8,6 +8,9 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { GameMap, USERS } from '../index.mjs'
+import { gridMoves, gridApply, gridMaterial } from '../map.mjs'
+import { pickMove } from '../ai.mjs'
+import { mulberry32 } from '../rng.mjs'
 
 // 표준 코너 시드: ID0 = (0,0),(6,0) / ID1 = (0,6),(6,6)
 function seededGame(seed) {
@@ -104,4 +107,62 @@ test('A2 terminal/winner: 초기 미종료, 전멸 시 종료·승자 판정', (
 	solo.initialized()
 	assert.equal(solo.isTerminal(), true) // count[ID1]==0
 	assert.equal(solo.winner(), USERS.ID0)
+})
+
+test('D grid 유틸: gridApply 는 원본 그리드 불변(순수) + 감염 정확', () => {
+	const map = seededGame(11)
+	const grid = map.fields.map(r => r.slice())
+	const snapshot = JSON.stringify(grid)
+	const next = gridApply(grid, USERS.ID0, { x: 0, y: 0 }, { x: 1, y: 1 })
+	assert.equal(JSON.stringify(grid), snapshot) // 원본 불변
+	assert.equal(next[1][1], USERS.ID0)
+	// gridApply 결과 = 엔진 applyMove 결과와 동일해야 (규칙 정합)
+	map.applyMove(USERS.ID0, { x: 0, y: 0 }, { x: 1, y: 1 })
+	assert.equal(JSON.stringify(next), JSON.stringify(map.fields))
+})
+
+test('D gridMoves = 엔진 legalMovesFrom 합집합과 동일', () => {
+	const map = seededGame(11)
+	const grid = map.fields.map(r => r.slice())
+	const g = gridMoves(grid, USERS.ID0)
+	let engineCount = 0
+	grid.forEach((row, y) => row.forEach((o, x) => {
+		if (o === USERS.ID0) engineCount += map.legalMovesFrom(USERS.ID0, { x, y }).length
+	}))
+	assert.equal(g.length, engineCount)
+})
+
+test('D riskAt: 원본 점수표 노출 — 적 인접 칸일수록 내 risk 큼', () => {
+	const map = seededGame(11)
+	// (1,5): ID1(0,6) 거리1 → risk 5+1=6. (3,1): ID1 두 시드 모두 거리5 → 1+1=2.
+	const nearEnemy = map.riskAt({ x: 1, y: 5 })[USERS.ID0]
+	const farEnemy = map.riskAt({ x: 3, y: 1 })[USERS.ID0]
+	assert.ok(nearEnemy > farEnemy, `${nearEnemy} > ${farEnemy}`)
+})
+
+test('D pickMove: 세 난이도 모두 합법수 반환 + hard 결정적', () => {
+	const map = seededGame(11)
+	for (const d of ['easy', 'normal', 'hard']) {
+		const mv = pickMove(map, USERS.ID1, d, mulberry32(5))
+		assert.ok(mv && (mv.type === 'clone' || mv.type === 'move'))
+		const legal = map.legalMovesFrom(USERS.ID1, mv.from).some(m => m.x === mv.to.x && m.y === mv.to.y)
+		assert.ok(legal, `${d} 합법수`)
+	}
+	// hard = 노이즈 0 → 같은 판이면 같은 수
+	const a = pickMove(map, USERS.ID1, 'hard', mulberry32(1))
+	const b = pickMove(map, USERS.ID1, 'hard', mulberry32(99))
+	assert.deepEqual(a, b)
+})
+
+test('D 난이도 강도: hard(negamax, 후공) 가 easy(블런더) 를 종국에서 이김', () => {
+	const map = seededGame(7)
+	const rng = mulberry32(3)
+	for (let i = 0; i < 200 && !map.isTerminal(); i++) {
+		const uid = i % 2 === 0 ? USERS.ID0 : USERS.ID1
+		const d = uid === USERS.ID0 ? 'easy' : 'hard'
+		const mv = pickMove(map, uid, d, rng)
+		if (!mv) continue // 패스
+		map.applyMove(uid, mv.from, mv.to)
+	}
+	assert.equal(map.winner(), USERS.ID1, `hard 승자여야 (count ${JSON.stringify(map.count)})`)
 })

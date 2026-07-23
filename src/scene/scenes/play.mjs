@@ -2,7 +2,7 @@
 // 소스 세균 선택(사각 프레임) → 합법 타겟 호버(복제/이동 미리보기 + 커서) → 클릭 실행.
 // clone=레이저 생성 애니, move=우주선 수거→운반→생성 애니. 종료판정→Result.
 import { div, onClick } from '../dom.mjs'
-import { GameMap, USERS, STATE } from '../../game/index.mjs'
+import { GameMap, USERS, STATE, mulberry32 } from '../../game/index.mjs'
 import { installFx, mountShips, playMove, playJump, WOBBLE_VARIANTS } from '../../render/fx.mjs'
 import { pickMove } from '../../game/ai.mjs'
 import { STAGES } from '../../data/stages.mjs'
@@ -33,6 +33,7 @@ export function playScene(ctx) {
 	let ships
 	let turns = 0
 	let cancelHuman = null
+	const aiRng = mulberry32(0xa1b2 ^ Date.now() >>> 0) // AI 블런더/노이즈용 (매판 다른 변주)
 
 	const el = div('scene', `
 		<div class="play-top">
@@ -268,7 +269,7 @@ export function playScene(ctx) {
 				await execMove('p1', USERS.ID0, mv.from, mv.to)
 			} else {
 				await sleep(450)
-				const mv = pickMove(map, USERS.ID1)
+				const mv = pickMove(map, USERS.ID1, difficulty, aiRng)
 				if (mv) await execMove('p2', USERS.ID1, mv.from, mv.to)
 			}
 			turns++
