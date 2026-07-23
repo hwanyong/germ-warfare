@@ -60,13 +60,10 @@
 	height: 100%;
 }
 
-/* 막힌 칸 (바위) — 프레임 없음(투명), 배경 채움, 바위 뚜렷 */
+/* 막힌 칸 (바위) — 프레임 없음(투명), 배경 없음, 바위만 뚜렷 */
 .tile.blocked {
 	border-image: none;
 	border: 0;
-	background: #d9d5c9; /* 종이보다 짙은 흙/돌 톤 */
-	border-radius: .25em;
-	box-shadow: inset 0 0 .4em #00000018;
 	cursor: url(/germ-warfare/assets/cursor/pointer3D.png) 2 2, default;
 }
 .tile.blocked > .bld.rock {
