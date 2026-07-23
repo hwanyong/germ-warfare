@@ -8,6 +8,7 @@ import { pickMove } from '../../game/ai.mjs'
 import { STAGES } from '../../data/stages.mjs'
 import { isTutorialDone } from '../../storage/progress.mjs'
 
+const CARTO = '/germ-warfare/assets/cartography'
 const ROWS = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
 const ownerTeam = o => (o === USERS.ID0 ? 'p1' : o === USERS.ID1 ? 'p2' : null)
 const posToXY = pos => ({ x: +pos[1], y: ROWS.indexOf(pos[0]) })
@@ -59,6 +60,54 @@ export function playScene(ctx) {
 
 	const tileEl = pos => board.querySelector(`.tile[data-pos="${pos}"]`)
 
+	// ---- 마을 배경(cartography) + 파괴 연출 ----
+	const buildings = {} // pos -> { el, destroyed }
+	function renderVillage() {
+		Object.values(buildings).forEach(b => b.el.remove())
+		for (const k in buildings) delete buildings[k]
+		for (const { pos, asset } of (stageData.village ?? [])) {
+			const img = document.createElement('img')
+			img.className = 'bld'
+			img.src = `${CARTO}/${asset}.png`
+			img.alt = ''
+			tileEl(pos).appendChild(img)
+			buildings[pos] = { el: img, destroyed: false }
+		}
+	}
+	function destroyBuilding(pos) {
+		const b = buildings[pos]
+		if (!b || b.destroyed) return
+		b.destroyed = true
+		const wreck = `${CARTO}/${Math.random() < 0.5 ? 'ruins' : 'skull'}.png`
+		b.el.src = wreck
+		b.el.classList.add('destroyed')
+		// 파괴 버스트: 큰 잔해가 germ 위로 잠깐 부풀었다 사라짐 (파괴 가시화)
+		const burst = document.createElement('img')
+		burst.className = 'destroy-burst'
+		burst.src = wreck
+		tileEl(pos).appendChild(burst)
+		burst.animate(
+			[{ transform: 'scale(.5) rotate(-8deg)', opacity: .95 }, { transform: 'scale(1.5) rotate(6deg)', opacity: 0 }],
+			{ duration: 520, easing: 'ease-out' }
+		).finished.then(() => burst.remove())
+	}
+	function flipAnim(pos) {
+		tileEl(pos).querySelector('.cell')?.animate(
+			[{ transform: 'scale(1) rotate(0)' }, { transform: 'scale(1.32) rotate(180deg)', offset: .5 }, { transform: 'scale(1) rotate(360deg)' }],
+			{ duration: 400, easing: 'ease-out' }
+		)
+	}
+	// 이동/생성 후: 뒤집힌 칸 애니 + 점령된 마을 파괴
+	function postMove(before, exclude) {
+		ROWS.forEach((r, y) => { for (let x = 0; x < 7; x++) {
+			const pos = `${r}${x}`
+			const now = map.fields[y][x]
+			const was = before[y][x]
+			if (now && was && now !== was && pos !== exclude) flipAnim(pos) // 감염 뒤집기
+			if (now && buildings[pos] && !buildings[pos].destroyed) destroyBuilding(pos) // 점령 파괴
+		} })
+	}
+
 	function syncTile(pos, { pop = false } = {}) {
 		const { x, y } = posToXY(pos)
 		const owner = ownerTeam(map.fields[y][x])
@@ -91,6 +140,7 @@ export function playScene(ctx) {
 		map.initialized()
 		turns = 0
 		board.querySelectorAll('.cell').forEach(c => c.remove())
+		renderVillage()
 		syncAll()
 	}
 
@@ -169,6 +219,7 @@ export function playScene(ctx) {
 	async function execMove(team, userId, from, to) {
 		const legal = map.legalMovesFrom(userId, from).find(m => m.x === to.x && m.y === to.y)
 		const fromPos = posStr(from), toPos = posStr(to)
+		const before = map.fields.map(row => row.slice()) // 감염/파괴 diff 용 스냅샷
 		if (legal.type === STATE.ATTACK.MOVE) {
 			await playJump(board, ships[team], {
 				fromPos, toPos,
@@ -181,6 +232,7 @@ export function playScene(ctx) {
 				onImpact: () => { map.applyMove(userId, from, to); syncTile(toPos, { pop: true }); syncAll() }
 			})
 		}
+		postMove(before, toPos) // 감염 뒤집기 애니 + 점령 마을 파괴
 	}
 
 	function finishGame() {

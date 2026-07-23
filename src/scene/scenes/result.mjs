@@ -28,7 +28,9 @@ export function resultScene(ctx) {
 			<button class="btn" data-act="select">스테이지 선택</button>
 		`
 
+	const winnerTeam = own > enemy ? 'p1' : 'p2'
 	const el = div('scene', `
+		<div class="cell badge" data-owner="${winnerTeam}" style="width:3.5em;height:3.5em"></div>
 		<div class="result-head ${win ? 'win' : 'lose'}">${win ? '승리! 🎉' : '아깝다! 😵'}</div>
 		<div class="card">
 			<div>내 세균 <span class="num">${own}</span> : <span class="num">${enemy}</span> 적 세균 <span class="sub">(${turns}턴)</span></div>
