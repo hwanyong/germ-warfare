@@ -98,7 +98,7 @@
 /* ---------- 인터랙션 (PHASE B) ---------- */
 /* 내 세균 = 선택 가능 → 손 커서 */
 .tile.selectable { cursor: url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer; }
-/* 선택된 소스 세균 = 코너 브래킷 프레임 (aim-clone). ::after 오버레이 — 칸 프레임 미변경. */
+/* 선택된 소스 세균 = 코너 브래킷 프레임 (aim-clone). 정적, 글로우 없음. 칸 프레임 미변경. */
 .tile.selected::after {
 	content: '';
 	position: absolute;
@@ -106,11 +106,6 @@
 	z-index: 3;
 	pointer-events: none;
 	background: url(/germ-warfare/assets/crosshair/aim-clone.png) center / 100% 100% no-repeat;
-	animation: sel-pulse 1s ease-in-out infinite;
-}
-@keyframes sel-pulse {
-	0%, 100% { filter: drop-shadow(0 0 0 transparent); opacity: .85; }
-	50%      { filter: drop-shadow(0 0 .3em var(--p1)); opacity: 1; }
 }
 /* 합법 타겟 = 포인터 커서 */
 .tile.legal { cursor: url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer; }
@@ -125,7 +120,7 @@
 	50%      { box-shadow: 0 0 .5em .1em var(--p1); }
 }
 
-/* 호버 미리보기 오버레이 (cell_small 고스트 + crosshair + 복제/이동 뱃지) */
+/* 호버 미리보기 오버레이 (cell_small 고스트 + 복제/이동 뱃지) */
 .tile .preview {
 	position: absolute;
 	inset: 0;
@@ -135,11 +130,16 @@
 }
 .tile .preview .ghost {
 	position: absolute;
-	inset: 14%;
+	inset: 6%;
 	background-size: contain;
 	background-repeat: no-repeat;
 	background-position: center;
-	opacity: .5;
+	opacity: .6;
+	animation: ghost-in .16s ease-out;
+}
+@keyframes ghost-in {
+	from { transform: scale(.5); opacity: 0; }
+	to   { transform: scale(1); opacity: .6; }
 }
 .tile.legal[data-owner-hint="p1"] .ghost { background-image: var(--cell-p1-sm); }
 .tile .preview .badge {

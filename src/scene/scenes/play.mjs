@@ -198,17 +198,17 @@ export function playScene(ctx) {
 				}
 			}
 			function onOver(e) {
-				const t = e.target.closest('.tile.legal')
-				if (!t || t.querySelector('.preview')) return
-				const isMove = t.dataset.moveType === 'move'
+				const tl = e.target.closest('.tile.legal')
+				if (!tl || tl.querySelector('.preview')) return
+				const isMove = tl.dataset.moveType === 'move'
 				const pv = document.createElement('div')
 				pv.className = 'preview'
 				pv.innerHTML = `<div class="ghost"></div><div class="badge">${isMove ? t('play.move') : t('play.clone')}</div>`
-				t.appendChild(pv)
+				tl.appendChild(pv)
 			}
 			function onOut(e) {
-				const t = e.target.closest('.tile')
-				if (t && !t.contains(e.relatedTarget)) t.querySelector('.preview')?.remove()
+				const tl = e.target.closest('.tile')
+				if (tl && !tl.contains(e.relatedTarget)) tl.querySelector('.preview')?.remove()
 			}
 
 			board.addEventListener('click', onBoardClick)
