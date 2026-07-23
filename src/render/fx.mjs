@@ -29,19 +29,16 @@ export function installFx() {
 	svg.setAttribute('height', '0')
 	svg.style.position = 'absolute'
 
+	// 정적 변위필터(SMIL 애니 없음) — 세균마다 유기적 외곽선 부여하되 per-frame 비용 0.
+	// (애니 필터를 다수 세균에 적용하면 컴포지터 포화 → 커스텀 커서 드롭. 움직임은 CSS breathe 로.)
 	let defs = ''
 	for (let i = 0; i < WOBBLE_VARIANTS; i++) {
 		const seed = i * 17 + 3
-		const bf = (0.016 + i * 0.0012).toFixed(4)
+		const bf = (0.016 + i * 0.0015).toFixed(4)
 		const bf2 = (+bf + 0.006).toFixed(4)
-		const dur = (5.5 + i * 0.55).toFixed(2)
-		const begin = (-i * 0.83).toFixed(2)
 		defs += `
 			<filter id="germ-wobble-${i}" x="-20%" y="-20%" width="140%" height="140%">
-				<feTurbulence type="fractalNoise" baseFrequency="${bf} ${bf2}" numOctaves="1" seed="${seed}" result="n">
-					<animate attributeName="baseFrequency" dur="${dur}s" begin="${begin}s"
-						values="${bf} ${bf2}; ${bf2} ${bf}; ${bf} ${bf2}" repeatCount="indefinite" />
-				</feTurbulence>
+				<feTurbulence type="fractalNoise" baseFrequency="${bf} ${bf2}" numOctaves="1" seed="${seed}" result="n" />
 				<feDisplacementMap in="SourceGraphic" in2="n" scale="4.5"
 					xChannelSelector="R" yChannelSelector="G" />
 			</filter>`
