@@ -69,3 +69,8 @@
 .credits-body .owner { font-weight: 700; }
 
 .back-btn { position: fixed; left: .8em; top: .8em; z-index: 10; }
+
+/* 스테이지 카드 선택 (PHASE E) */
+.stage-card { transition: transform .1s ease; }
+.stage-card:hover { transform: scale(1.02); }
+.stage-card[aria-selected="true"] { background: var(--p1-soft); }

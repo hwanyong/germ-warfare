@@ -2,18 +2,16 @@
 // 소스 세균 선택(사각 프레임) → 합법 타겟 호버(복제/이동 미리보기 + 커서) → 클릭 실행.
 // clone=레이저 생성 애니, move=우주선 수거→운반→생성 애니. 종료판정→Result.
 import { div, onClick } from '../dom.mjs'
-import { GameMap, USERS, STATE, mulberry32 } from '../../game/index.mjs'
+import { GameMap, USERS, BLOCKED, STATE, mulberry32 } from '../../game/index.mjs'
 import { installFx, mountShips, playMove, playJump, WOBBLE_VARIANTS } from '../../render/fx.mjs'
 import { pickMove } from '../../game/ai.mjs'
 import { STAGES } from '../../data/stages.mjs'
 import { isTutorialDone } from '../../storage/progress.mjs'
-import { t } from '../../i18n/index.mjs'
+import { t, getLang } from '../../i18n/index.mjs'
 
 const CARTO = '/germ-warfare/assets/cartography'
-const ROWS = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
 const ownerTeam = o => (o === USERS.ID0 ? 'p1' : o === USERS.ID1 ? 'p2' : null)
-const posToXY = pos => ({ x: +pos[1], y: ROWS.indexOf(pos[0]) })
-const posStr = p => `${ROWS[p.y]}${p.x}`
+const rowChar = y => String.fromCharCode(65 + y) // A, B, C, ...
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 const other = u => (u === USERS.ID0 ? USERS.ID1 : USERS.ID0)
 
@@ -27,6 +25,11 @@ export function playScene(ctx) {
 	}
 
 	const stageData = STAGES[stage]
+	const { w: W, h: H } = stageData.grid
+	const ROWS = Array.from({ length: H }, (_, y) => rowChar(y))
+	const posToXY = pos => ({ x: +pos.slice(1), y: pos.charCodeAt(0) - 65 })
+	const posStr = p => `${rowChar(p.y)}${p.x}`
+	const blockedSet = new Set((stageData.blocked ?? []).map(b => `${b.x},${b.y}`))
 	let running = true
 	let paused = false
 	let map
@@ -37,7 +40,7 @@ export function playScene(ctx) {
 
 	const el = div('scene', `
 		<div class="play-top">
-			<span class="sub">${stage} · ${difficulty.toUpperCase()}</span>
+			<span class="sub">${stageData.name[getLang()] ?? stageData.name.en} · ${difficulty.toUpperCase()}</span>
 			<div class="play-hud">
 				<span class="cell badge" data-owner="p1" style="width:1.1em;height:1.1em;display:inline-block"></span>
 				<span class="num" id="s1">02</span><span class="sub">:</span><span class="num" id="s2">02</span>
@@ -46,9 +49,11 @@ export function playScene(ctx) {
 			</div>
 		</div>
 		<div class="turn-label" id="turn"></div>
-		<div class="board" id="board">
-			${ROWS.map((r, y) => Array.from({ length: 7 }, (_, x) =>
-				`<div class="tile frame-thin" data-pos="${r}${x}"></div>`).join('')).join('')}
+		<div class="board" id="board" style="grid-template-columns:repeat(${W},1fr);grid-template-rows:repeat(${H},1fr);aspect-ratio:${W}/${H}">
+			${ROWS.map((r, y) => Array.from({ length: W }, (_, x) =>
+				blockedSet.has(`${x},${y}`)
+					? `<div class="tile frame-thin blocked" data-pos="${r}${x}"><img class="bld rock" src="${CARTO}/rocks.png" alt="" /></div>`
+					: `<div class="tile frame-thin" data-pos="${r}${x}"></div>`).join('')).join('')}
 			<div class="fx-layer"></div>
 		</div>
 	`)
@@ -101,7 +106,7 @@ export function playScene(ctx) {
 	}
 	// 이동/생성 후: 뒤집힌 칸 애니 + 점령된 마을 파괴
 	function postMove(before, exclude) {
-		ROWS.forEach((r, y) => { for (let x = 0; x < 7; x++) {
+		ROWS.forEach((r, y) => { for (let x = 0; x < W; x++) {
 			const pos = `${r}${x}`
 			const now = map.fields[y][x]
 			const was = before[y][x]
@@ -130,12 +135,12 @@ export function playScene(ctx) {
 		)
 	}
 	function syncAll() {
-		ROWS.forEach((r, y) => { for (let x = 0; x < 7; x++) syncTile(`${r}${x}`) })
+		ROWS.forEach((r, y) => { for (let x = 0; x < W; x++) syncTile(`${r}${x}`) })
 		s1.textContent = String(map.count[USERS.ID0]).padStart(2, '0')
 		s2.textContent = String(map.count[USERS.ID1]).padStart(2, '0')
 	}
 	function reset() {
-		map = new GameMap({ seed: 42 })
+		map = new GameMap({ seed: 42, grid: stageData.grid, blocked: stageData.blocked })
 		map.clear()
 		stageData.seeds.p1.forEach(a => map.initField(USERS.ID0, a))
 		stageData.seeds.p2.forEach(a => map.initField(USERS.ID1, a))
@@ -155,7 +160,7 @@ export function playScene(ctx) {
 		})
 	}
 	function markSelectable() {
-		ROWS.forEach((r, y) => { for (let x = 0; x < 7; x++) {
+		ROWS.forEach((r, y) => { for (let x = 0; x < W; x++) {
 			tileEl(`${r}${x}`).classList.toggle('selectable', ownerTeam(map.fields[y][x]) === 'p1')
 		} })
 	}

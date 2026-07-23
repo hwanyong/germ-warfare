@@ -68,7 +68,7 @@
 - **D3 3난이도**(깊이/휴리스틱/블런더율/think-time) + 시드 블런더 무작위. StageSelect/Settings에서 선택.
 - ── 여기까지 = **"플레이 가능 + 전 에셋 시연 + 난이도 있는 PvE"** 완성 (item 3 종료) ──
 
-### PHASE E — 스테이지/맵 다양·스토리  [item 2]
+### PHASE E — 스테이지/맵 다양·스토리  [item 2]  ✅ 완료
 - **E1 Stage 스키마 확장**: grid 크기/형태, blocked 칸, N 시드, 배경 배치, objective, story 인트로.
 - **E2 map.mjs 그리드 완전 파라미터화**(dims+blocked). (관련필드=체비쇼프라 직사각 자연 일반화)
 - **E3 다수 스테이지 + 진행저장**(localStorage append-only, ADR-006) + StageSelect 확장. 맵 변주/스토리 훅.

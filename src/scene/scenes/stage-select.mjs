@@ -1,25 +1,32 @@
-// StageSelect 씬 — 스테이지(현재 1개) + 난이도 선택 + 난이도별 최고점 표시(A5).
+// StageSelect 씬 — 스테이지 카드 목록(PHASE E: 다수) + 난이도 + 스테이지×난이도 최고점.
 import { div, onClick } from '../dom.mjs'
 import { STAGES, STAGE_ORDER } from '../../data/stages.mjs'
 import { getRecord } from '../../storage/progress.mjs'
-import { t } from '../../i18n/index.mjs'
+import { t, getLang } from '../../i18n/index.mjs'
 
 const DIFFS = ['easy', 'normal', 'hard']
 const LABEL = { easy: 'EASY', normal: 'NORMAL', hard: 'HARD' }
 
 export function stageSelectScene(ctx) {
 	let difficulty = ctx.params.difficulty ?? 'normal'
-	const stageId = STAGE_ORDER[0]
-	const stage = STAGES[stageId]
+	let stageId = ctx.params.stage ?? STAGE_ORDER[0]
+	const lang = getLang()
 
 	const el = div('scene', `
 		<div class="logo" style="font-size:2rem">${t('stage.title')}</div>
-		<div class="card">
-			<div style="font-family:var(--font-title)">STAGE 01 · ${t('stage.name')}</div>
-			<div>${t('stage.best')} <span class="num" id="best">—</span> <span class="sub" id="wins"></span></div>
-			<div class="btn-row" id="diffs">
-				${DIFFS.map(d => `<button class="btn" data-diff="${d}"${d === difficulty ? ' aria-selected="true"' : ''}>${LABEL[d]}</button>`).join('')}
-			</div>
+		<div class="btn-col" id="stages" style="gap:.5em">
+			${STAGE_ORDER.map((id, i) => {
+				const s = STAGES[id]
+				return `
+				<div class="card stage-card" data-stage="${id}"${id === stageId ? ' aria-selected="true"' : ''} style="min-width:17em;cursor:url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer">
+					<div style="font-family:var(--font-title)">STAGE ${String(i + 1).padStart(2, '0')} · ${s.name[lang] ?? s.name.en}</div>
+					<div class="sub">${s.grid.w}×${s.grid.h}${s.blocked?.length ? ` · ⛰${s.blocked.length}` : ''}</div>
+					<div>${t('stage.best')} <span class="num" data-best="${id}">—</span> <span class="sub" data-wins="${id}"></span></div>
+				</div>`
+			}).join('')}
+		</div>
+		<div class="btn-row" id="diffs">
+			${DIFFS.map(d => `<button class="btn" data-diff="${d}"${d === difficulty ? ' aria-selected="true"' : ''}>${LABEL[d]}</button>`).join('')}
 		</div>
 		<div class="btn-row">
 			<button class="btn primary" data-act="play">${t('stage.start')}</button>
@@ -27,14 +34,19 @@ export function stageSelectScene(ctx) {
 		</div>
 	`)
 
-	const bestEl = el.querySelector('#best')
-	const winsEl = el.querySelector('#wins')
 	const refreshBest = () => {
-		const rec = getRecord(stageId, difficulty)
-		bestEl.textContent = rec.best > 0 ? String(rec.best) : '—'
-		winsEl.textContent = rec.plays > 0 ? `(${rec.wins}/${rec.plays})` : ''
+		for (const id of STAGE_ORDER) {
+			const rec = getRecord(id, difficulty)
+			el.querySelector(`[data-best="${id}"]`).textContent = rec.best > 0 ? String(rec.best) : '—'
+			el.querySelector(`[data-wins="${id}"]`).textContent = rec.plays > 0 ? `(${rec.wins}/${rec.plays})` : ''
+		}
 	}
 
+	onClick(el, 'data-stage', id => {
+		stageId = id
+		el.querySelectorAll('[data-stage]').forEach(c => c.removeAttribute('aria-selected'))
+		el.querySelector(`[data-stage="${id}"]`).setAttribute('aria-selected', 'true')
+	})
 	onClick(el, 'data-diff', d => {
 		difficulty = d
 		el.querySelectorAll('[data-diff]').forEach(b => b.removeAttribute('aria-selected'))

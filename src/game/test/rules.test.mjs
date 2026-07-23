@@ -166,3 +166,35 @@ test('D 난이도 강도: hard(negamax, 후공) 가 easy(블런더) 를 종국�
 	}
 	assert.equal(map.winner(), USERS.ID1, `hard 승자여야 (count ${JSON.stringify(map.count)})`)
 })
+
+test('E 그리드 파라미터화: 9x9 + blocked — 점령 불가·totalCells·terminal 정합', () => {
+	const map = new GameMap({ seed: 5, grid: { w: 9, h: 9 }, blocked: [{ x: 4, y: 4 }] })
+	map.clear()
+	map.initField(USERS.ID0, { x: 0, y: 0 })
+	map.initField(USERS.ID1, { x: 8, y: 8 })
+	map.initialized()
+	assert.equal(map.fields.length, 9)
+	assert.equal(map.fields[0].length, 9)
+	assert.equal(map.totalCells, 81 - 1)          // blocked 제외
+	assert.equal(map.fields[4][4], 'BLOCKED')     // 그리드에 마커 노출
+	// blocked 는 합법 타겟 아님
+	const all = map.legalMoves(USERS.ID0)
+	assert.ok(all.every(m => !(m.x === 4 && m.y === 4)))
+	// blocked 점령 시도 → 오류 (applyMove 불법)
+	assert.throws(() => map.applyMove(USERS.ID0, { x: 0, y: 0 }, { x: 4, y: 4 }))
+	// count 는 blocked 오염 없음
+	assert.deepEqual(map.count, { [USERS.ID0]: 1, [USERS.ID1]: 1 })
+})
+
+test('E blocked 위 AI: gridMoves 가 blocked 타겟 제외 + pickMove 합법', () => {
+	const map = new GameMap({ seed: 5, grid: { w: 7, h: 7 }, blocked: [{ x: 1, y: 1 }] })
+	map.clear()
+	map.initField(USERS.ID0, { x: 0, y: 0 })
+	map.initField(USERS.ID1, { x: 6, y: 6 })
+	map.initialized()
+	const g = map.fields.map(r => r.slice())
+	const moves = gridMoves(g, USERS.ID0)
+	assert.ok(moves.every(m => !(m.to.x === 1 && m.to.y === 1)), 'blocked 타겟 제외')
+	const mv = pickMove(map, USERS.ID0, 'hard', mulberry32(2))
+	assert.ok(!(mv.to.x === 1 && mv.to.y === 1))
+})

@@ -19,6 +19,7 @@ const USERS = {
 	ID0: 'USER0',
 	ID1: 'USER1'
 }
+const BLOCKED = 'BLOCKED' // 막힌 칸 마커 (fields 그리드에 노출)
 
 class Field {
 	#axis = {
@@ -91,10 +92,10 @@ class Field {
 		this.#score.attack[USERS.ID1] = STATE.ATTACK.IMPOSSIBLE
 
 		this.#relatedFields.forEach((fields, distance) => {
-			const score = this.#riskMax - distance
+			const score = Math.max(0, this.#riskMax - distance)
 
 			fields.forEach(field => {
-				if (field.owner == null) return
+				if (!(field.owner in this.#rival)) return // null/BLOCKED 는 risk·attack 무관
 
 				this.#score.risk[this.#rival[field.owner]] += score
 
@@ -163,7 +164,7 @@ class Field {
 			return target
 		}
 
-		let minRisk = this.#riskMax * 49 // 49: 7 * 7 map size
+		let minRisk = Infinity
 		let targets = []
 
 		// this.#relatedFields[2] 의 원소들 중에 owner == userId 이면서 risk가 가장 낮은 것들을 찾아 targets에 push
@@ -191,26 +192,11 @@ class Field {
 }
 class GameMap {
 	#canInit = true
-	#fields = [
-	//   0  1  2  3  4  5  6
-		[0, 0, 0, 0, 0, 0, 0], // A(0)
-		[0, 0, 0, 0, 0, 0, 0], // B(1)
-		[0, 0, 0, 0, 0, 0, 0], // C(2)
-		[0, 0, 0, 0, 0, 0, 0], // D(3)
-		[0, 0, 0, 0, 0, 0, 0], // E(4)
-		[0, 0, 0, 0, 0, 0, 0], // F(5)
-		[0, 0, 0, 0, 0, 0, 0], // G(6)
-	]
-	#fieldsBasedOnUser = [
-	//   0  1  2  3  4  5  6
-		[null, null, null, null, null, null, null], // A(0)
-		[null, null, null, null, null, null, null], // B(1)
-		[null, null, null, null, null, null, null], // C(2)
-		[null, null, null, null, null, null, null], // D(3)
-		[null, null, null, null, null, null, null], // E(4)
-		[null, null, null, null, null, null, null], // F(5)
-		[null, null, null, null, null, null, null], // G(6)
-	]
+	#w = 7
+	#h = 7
+	#blocked = [] // [{x,y}] 막힌 칸 (점령/통과 불가)
+	#fields = []
+	#fieldsBasedOnUser = []
 
 	#count = {
 		[USERS.ID0]: 0,
@@ -228,21 +214,14 @@ class GameMap {
 	}
 
 	#generateRelatedFieldAboutCurrentField = (fields, { x: colCrtIdx, y: rowCrtIdx }) => {
+		const maxDist = Math.max(this.#w, this.#h) // 거리 버킷 0..maxDist-1
 		return fields.reduce((accRow, _row, rowIdx) => _row.reduce((accCol, _col, colIdx) => {
 			const distance = Math.max(Math.abs(rowIdx - rowCrtIdx), Math.abs(colIdx - colCrtIdx))
 
 			accCol[distance].push(_col)
 
 			return accCol
-		}, accRow), [
-			[], // 0: self
-			[], // 1
-			[], // 2
-			[], // 3
-			[], // 4
-			[], // 5
-			[], // 6
-		])
+		}, accRow), Array.from({ length: maxDist }, () => []))
 	}
 	#initFields = fields => fields.map((row, rowCrtIdx) => row.map((col, colCrtIdx) => new Field({ x: colCrtIdx, y: rowCrtIdx }, {
 		changed: this.#changeFieldOwner
@@ -260,13 +239,16 @@ class GameMap {
 	#changeFieldOwner = (before, after, axis) => {
 		this.#fieldsBasedOnUser[axis.y][axis.x] = after
 
-		if (before) this.#count[before]--
-		if (after) this.#count[after]++
+		if (before in this.#count) this.#count[before]--
+		if (after in this.#count) this.#count[after]++
 	}
 
-	constructor({ events = {}, seed } = {}) {
+	constructor({ events = {}, seed, grid, blocked } = {}) {
 		this.#seed = seed ?? randomSeed()
 		this.#rng = mulberry32(this.#seed)
+		this.#w = grid?.w ?? 7
+		this.#h = grid?.h ?? 7
+		this.#blocked = blocked ?? []
 
 		this.#events = {
 			...this.#events,
@@ -286,6 +268,12 @@ class GameMap {
 	get seed() {
 		return this.#seed
 	}
+	get size() {
+		return { w: this.#w, h: this.#h }
+	}
+	get blocked() {
+		return this.#blocked.map(b => ({ ...b }))
+	}
 
 	//#region A2: legalMoves / terminal / winner (docs/roadmap.md PHASE A)
 	/** userId 가 점령 가능한 빈 칸 목록. @returns {{x,y,type}[]} type=STATE.ATTACK.CLONE|MOVE */
@@ -298,9 +286,9 @@ class GameMap {
 		}))
 		return moves
 	}
-	/** 보드 총 칸 수 */
+	/** 플레이 가능 칸 수 (막힌 칸 제외) */
 	get totalCells() {
-		return this.#fields.length * this.#fields[0].length
+		return this.#w * this.#h - this.#blocked.length
 	}
 	/** 종료 판정: 보드 꽉참 / 한 팀 전멸 / 양 팀 모두 합법수 없음 */
 	isTerminal = () => {
@@ -388,33 +376,25 @@ class GameMap {
 		}
 	}
 	clear() {
-		this.#fields = this.#initFields(this.#fields)
+		const blank = Array.from({ length: this.#h }, () => Array.from({ length: this.#w }, () => 0))
+		this.#fieldsBasedOnUser = Array.from({ length: this.#h }, () => Array.from({ length: this.#w }, () => null))
+		this.#fields = this.#initFields(blank)
 		this.#fields = this.#initRelatedFields(this.#fields)
 
 		this.#count[USERS.ID0] = 0
 		this.#count[USERS.ID1] = 0
 
+		// 막힌 칸 마킹 (점령 불가, risk/감염 무관)
+		for (const { x, y } of this.#blocked) {
+			this.#fields[y][x].owner = BLOCKED
+		}
+
 		this.#canInit = true
 	}
 	display = () => {
-		const table = [
-			['-', '-', '-', '-', '-', '-', '-'],
-			['-', '-', '-', '-', '-', '-', '-'],
-			['-', '-', '-', '-', '-', '-', '-'],
-			['-', '-', '-', '-', '-', '-', '-'],
-			['-', '-', '-', '-', '-', '-', '-'],
-			['-', '-', '-', '-', '-', '-', '-'],
-			['-', '-', '-', '-', '-', '-', '-']
-		]
-
-		this.#fields.forEach((row, rowIdx) => {
-			row.forEach((col, colIdx) => {
-				const { owner } = col
-
-				table[rowIdx][colIdx] = (owner == USERS.ID0 ? '0' : owner == USERS.ID1 ? '1' : '-')
-			})
-		})
-
+		const table = this.#fields.map(row => row.map(col =>
+			col.owner === USERS.ID0 ? '0' : col.owner === USERS.ID1 ? '1' : col.owner === BLOCKED ? '#' : '-'
+		))
 		console.table(table)
 		console.table(this.#count)
 	}
@@ -425,7 +405,6 @@ class GameMap {
 // 동일해야 한다(CLONE 거리1 원본유지 / MOVE 거리2 원본소멸 / 감염=거리1 적 뒤집기).
 // 규칙 SSOT 유지를 위해 이 파일에 함께 둔다.
 
-const SIZE = 7
 const rivalOf = u => (u === USERS.ID0 ? USERS.ID1 : USERS.ID0)
 
 /** map.fields 딥클론 */
@@ -434,10 +413,11 @@ const cloneGrid = grid => grid.map(row => row.slice())
 /** 그리드에서 userId 의 모든 (from,to) 합법수 */
 function gridMoves(grid, userId) {
 	const out = []
-	for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
+	const H = grid.length, W = grid[0].length
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		if (grid[y][x] !== userId) continue
-		for (let ty = Math.max(0, y - 2); ty <= Math.min(SIZE - 1, y + 2); ty++)
-			for (let tx = Math.max(0, x - 2); tx <= Math.min(SIZE - 1, x + 2); tx++) {
+		for (let ty = Math.max(0, y - 2); ty <= Math.min(H - 1, y + 2); ty++)
+			for (let tx = Math.max(0, x - 2); tx <= Math.min(W - 1, x + 2); tx++) {
 				if (grid[ty][tx] !== null) continue
 				const d = Math.max(Math.abs(tx - x), Math.abs(ty - y))
 				if (d === 1 || d === 2) out.push({ from: { x, y }, to: { x: tx, y: ty }, clone: d === 1 })
@@ -472,4 +452,4 @@ function gridMaterial(grid, userId) {
 }
 //#endregion
 
-export { GameMap, USERS, cloneGrid, gridMoves, gridApply, gridMaterial, rivalOf }
+export { GameMap, USERS, BLOCKED, cloneGrid, gridMoves, gridApply, gridMaterial, rivalOf }
