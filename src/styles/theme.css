@@ -21,6 +21,8 @@
 	/* 세균 말 */
 	--cell-p1: url(/germ-warfare/assets/cell-green.png);
 	--cell-p2: url(/germ-warfare/assets/cell-pink.png);
+	--cell-p1-sm: url(/germ-warfare/assets/cell-green-sm.png);
+	--cell-p2-sm: url(/germ-warfare/assets/cell-pink-sm.png);
 
 	/* 타이포 */
 	--font-num: 'Orbitron', sans-serif;   /* 점수/숫자 */

@@ -318,6 +318,30 @@ class GameMap {
 		if (c0 === c1) return null
 		return c0 > c1 ? USERS.ID0 : USERS.ID1
 	}
+
+	/** 명시적 소스 기준 합법 타겟. from(자기 칸)에서 거리1=CLONE, 거리2=MOVE 인 빈 칸. */
+	legalMovesFrom = (userId, from) => {
+		if (this.#fieldsBasedOnUser[from.y]?.[from.x] !== userId) return []
+		const out = []
+		this.#fieldsBasedOnUser.forEach((row, y) => row.forEach((owner, x) => {
+			if (owner) return
+			const d = Math.max(Math.abs(x - from.x), Math.abs(y - from.y))
+			if (d === 1) out.push({ x, y, type: STATE.ATTACK.CLONE })
+			else if (d === 2) out.push({ x, y, type: STATE.ATTACK.MOVE })
+		}))
+		return out
+	}
+	/** 소스→타겟 적용. CLONE(거리1, 원본유지) / MOVE(거리2, 원본소멸) + 감염. @returns 'clone'|'move' */
+	applyMove = (userId, from, to) => {
+		const legal = this.legalMovesFrom(userId, from).find(m => m.x === to.x && m.y === to.y)
+		if (!legal) throw new Error('[00-05]Illegal move')
+		const move = legal.type === STATE.ATTACK.MOVE
+		this.#fields[to.y][to.x].owner = userId        // count++ (changed 이벤트)
+		if (move) this.#fields[from.y][from.x].clear()  // MOVE: 원본 소멸 (count--)
+		this.#fields[to.y][to.x].infect(userId)         // 인접 적 감염
+		this.#calcScore()
+		return move ? 'move' : 'clone'
+	}
 	//#endregion
 
 	initialized = () => {

@@ -180,12 +180,22 @@ export async function playMove(board, ship, { pos, onImpact }) {
 
 	await wait(150)
 
-	// 3) 착탄 → burst(대칭, 셀 중앙) + 플래시 + 세균 생성/이동
+	// 3) 착탄 → burst(대칭, 셀 중앙) + 플래시 + 세균 생성
 	spark(layer, ship.team, cx, cyCenter)
+	impactFlash(layer, ship.team, cx, cyCenter)
+	onImpact?.()
+	await wait(130)
+
+	// 4) 귀환
+	await ship.moveTo(ship.home.x, ship.home.y, 460)
+}
+
+// 착탄 플래시 헬퍼
+function impactFlash(layer, team, x, y) {
 	const flash = el('div', 'impact-flash')
-	flash.dataset.team = ship.team
-	flash.style.left = `${cx}px`
-	flash.style.top = `${cyCenter}px`
+	flash.dataset.team = team
+	flash.style.left = `${x}px`
+	flash.style.top = `${y}px`
 	layer.appendChild(flash)
 	flash.animate(
 		[
@@ -194,9 +204,75 @@ export async function playMove(board, ship, { pos, onImpact }) {
 		],
 		{ duration: 300, easing: 'ease-out' }
 	).finished.then(() => flash.remove())
-	onImpact?.()
+}
+
+// 임의 요소를 (cx,cy) 중심으로 이동
+async function translateTo(elm, cx, cy, dur) {
+	const to = `translate(${cx - elm.offsetWidth / 2}px, ${cy - elm.offsetHeight / 2}px)`
+	const from = elm.style.transform || to
+	await elm.animate([{ transform: from }, { transform: to }],
+		{ duration: dur, easing: 'cubic-bezier(.5,0,.3,1)' }).finished
+	elm.style.transform = to
+}
+
+function tileMetric(board, pos) {
+	const b = board.getBoundingClientRect()
+	const t = board.querySelector(`.tile[data-pos="${pos}"]`).getBoundingClientRect()
+	return { cx: t.left - b.left + t.width / 2, cy: t.top - b.top + t.height / 2, top: t.top - b.top, h: t.height }
+}
+
+/**
+ * MOVE(점프) 애니 — 우주선이 소스 세균을 수거해 타겟으로 운반 후 생성.
+ * @param {{fromPos, toPos, onPickup?, onDrop?}} opts
+ */
+export async function playJump(board, ship, { fromPos, toPos, onPickup, onDrop }) {
+	const layer = board.querySelector('.fx-layer')
+	if (!ship || !board.querySelector(`.tile[data-pos="${fromPos}"]`) || !board.querySelector(`.tile[data-pos="${toPos}"]`)) {
+		onPickup?.(); onDrop?.(); return
+	}
+	const F = tileMetric(board, fromPos)
+	const T = tileMetric(board, toPos)
+	const airOf = m => m.top - m.h * 1.1 + ship.h / 2 - FIRE_LIFT
+
+	// 1) 소스 상공으로
+	await ship.moveTo(F.cx, airOf(F), 420)
+
+	// 2) 트랙터 빔 + 수거 스파크 → 소스 제거, 배에 미니 세균 부착
+	const mz = ship.muzzle()
+	const beam = el('div', 'laser-beam')
+	beam.dataset.team = ship.team
+	beam.style.left = `${mz.x}px`
+	beam.style.top = `${mz.y}px`
+	beam.style.height = `${Math.max(F.cy - mz.y, 0)}px`
+	layer.appendChild(beam)
+	beam.animate(
+		[{ transform: 'translateX(-50%) scaleY(0)', opacity: .2 }, { transform: 'translateX(-50%) scaleY(1)', opacity: 1, offset: .5 }, { transform: 'translateX(-50%) scaleY(1)', opacity: 0 }],
+		{ duration: 320, easing: 'ease-out' }
+	).finished.then(() => beam.remove())
+	spark(layer, ship.team, F.cx, F.cy, ship.w)
+	onPickup?.() // 모델: 소스 세균 제거 (렌더가 소스 germ 축소/제거)
+
+	const mini = el('img', 'carry-germ')
+	mini.src = `${BASE}/cell-${ship.team === 'p1' ? 'green' : 'pink'}-sm.png`
+	mini.style.left = '0'; mini.style.top = '0'
+	layer.appendChild(mini)
+	const cargoY = m => m.top - m.h * 1.1 + ship.h * 1.05 - FIRE_LIFT // 배 아래
+	mini.style.transform = `translate(${F.cx - mini.offsetWidth / 2}px, ${cargoY(F) - mini.offsetHeight / 2}px)`
+	await wait(140)
+
+	// 3) 운반 — 배 + 미니 세균 동시에 타겟 상공으로
+	await Promise.all([
+		ship.moveTo(T.cx, airOf(T), 520),
+		translateTo(mini, T.cx, cargoY(T), 520)
+	])
+
+	// 4) 투하 — 미니 제거, 타겟 생성 + 스파크/플래시
+	mini.remove()
+	spark(layer, ship.team, T.cx, T.cy)
+	impactFlash(layer, ship.team, T.cx, T.cy)
+	onDrop?.() // 모델: 타겟 세균 생성
 	await wait(130)
 
-	// 4) 귀환
+	// 5) 귀환
 	await ship.moveTo(ship.home.x, ship.home.y, 460)
 }

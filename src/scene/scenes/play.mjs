@@ -1,26 +1,24 @@
-// Play 씬 — A1 에서는 기존 셀프플레이 데모(정지가능). 클릭 인터랙션·턴루프·AI 는 PHASE B/D.
-// 데모 결과 버튼은 씬 흐름 확인용(실제 종료판정 = A2).
+// Play 씬 (PHASE B) — 인터랙티브. human(p1/그린) vs 스텁 AI(p2/핑크).
+// 소스 세균 선택(사각 프레임) → 합법 타겟 호버(복제/이동 미리보기 + 커서) → 클릭 실행.
+// clone=레이저 생성 애니, move=우주선 수거→운반→생성 애니. 종료판정→Result.
 import { div, onClick } from '../dom.mjs'
-import { GameMap, USERS } from '../../game/index.mjs'
-import { installFx, mountShips, playMove, WOBBLE_VARIANTS } from '../../render/fx.mjs'
+import { GameMap, USERS, STATE } from '../../game/index.mjs'
+import { installFx, mountShips, playMove, playJump, WOBBLE_VARIANTS } from '../../render/fx.mjs'
+import { pickMove } from '../../game/ai.mjs'
 import { STAGES } from '../../data/stages.mjs'
 import { isTutorialDone } from '../../storage/progress.mjs'
 
 const ROWS = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
-const teamUser = t => (t === 'p1' ? USERS.ID0 : USERS.ID1)
 const ownerTeam = o => (o === USERS.ID0 ? 'p1' : o === USERS.ID1 ? 'p2' : null)
 const posToXY = pos => ({ x: +pos[1], y: ROWS.indexOf(pos[0]) })
+const posStr = p => `${ROWS[p.y]}${p.x}`
 const sleep = ms => new Promise(r => setTimeout(r, ms))
-const SCRIPT = [
-	{ team: 'p1', pos: 'A1' }, { team: 'p2', pos: 'G5' },
-	{ team: 'p1', pos: 'A5' }, { team: 'p2', pos: 'G1' },
-	{ team: 'p1', pos: 'B1' }, { team: 'p2', pos: 'F5' }
-]
+const other = u => (u === USERS.ID0 ? USERS.ID1 : USERS.ID0)
 
 export function playScene(ctx) {
 	const { stage = 'stage-01', difficulty = 'normal' } = ctx.params
 
-	// A6: 첫 플레이 = 튜토리얼 자동 (완료 후 play 로 복귀)
+	// A6: 첫 플레이 = 튜토리얼 자동
 	if (!isTutorialDone()) {
 		queueMicrotask(() => ctx.go('tutorial', { returnTo: 'play', stage, difficulty }))
 		return { el: div('scene') }
@@ -32,6 +30,7 @@ export function playScene(ctx) {
 	let map
 	let ships
 	let turns = 0
+	let cancelHuman = null
 
 	const el = div('scene', `
 		<div class="play-top">
@@ -43,20 +42,18 @@ export function playScene(ctx) {
 				<button class="btn" data-act="pause" style="font-size:.8rem;padding:.1em .55em">⏸</button>
 			</div>
 		</div>
+		<div class="turn-label" id="turn"></div>
 		<div class="board" id="board">
 			${ROWS.map((r, y) => Array.from({ length: 7 }, (_, x) =>
 				`<div class="tile frame-thin" data-pos="${r}${x}"></div>`).join('')).join('')}
 			<div class="fx-layer"></div>
-		</div>
-		<div class="btn-row" style="font-size:.72em">
-			<button class="btn" data-act="win">결과(승)·데모</button>
-			<button class="btn" data-act="lose">결과(패)·데모</button>
 		</div>
 	`)
 
 	const board = el.querySelector('#board')
 	const s1 = el.querySelector('#s1')
 	const s2 = el.querySelector('#s2')
+	const turnEl = el.querySelector('#turn')
 
 	installFx()
 
@@ -76,12 +73,10 @@ export function playScene(ctx) {
 			t.appendChild(cell)
 		}
 		cell.dataset.owner = owner
-		if (pop) {
-			cell.animate(
-				[{ transform: 'scale(0)' }, { transform: 'scale(1.18)', offset: 0.7 }, { transform: 'scale(1)' }],
-				{ duration: 320, easing: 'cubic-bezier(.3,1.3,.5,1)' }
-			)
-		}
+		if (pop) cell.animate(
+			[{ transform: 'scale(0)' }, { transform: 'scale(1.18)', offset: 0.7 }, { transform: 'scale(1)' }],
+			{ duration: 320, easing: 'cubic-bezier(.3,1.3,.5,1)' }
+		)
 	}
 	function syncAll() {
 		ROWS.forEach((r, y) => { for (let x = 0; x < 7; x++) syncTile(`${r}${x}`) })
@@ -91,7 +86,6 @@ export function playScene(ctx) {
 	function reset() {
 		map = new GameMap({ seed: 42 })
 		map.clear()
-		// A3: 스테이지 데이터의 시드 사용 (하드코딩 금지)
 		stageData.seeds.p1.forEach(a => map.initField(USERS.ID0, a))
 		stageData.seeds.p2.forEach(a => map.initField(USERS.ID1, a))
 		map.initialized()
@@ -100,30 +94,135 @@ export function playScene(ctx) {
 		syncAll()
 	}
 
-	async function loop() {
-		ships = await mountShips(board)
-		while (running) {
-			reset()
-			await sleep(700)
-			for (const mv of SCRIPT) {
-				if (!running) break
-				while (paused && running) await sleep(120)
-				await playMove(board, ships[mv.team], {
-					pos: mv.pos,
-					onImpact: () => {
-						const { x, y } = posToXY(mv.pos)
-						map.setField(teamUser(mv.team), { x, y })
-						turns++
-						syncTile(mv.pos, { pop: true })
-						syncAll()
-					}
-				})
-				await sleep(240)
+	// ---- 인터랙션 정리 ----
+	function clearHints() {
+		board.querySelectorAll('.selectable, .selected, .legal').forEach(t => {
+			t.classList.remove('selectable', 'selected', 'legal')
+			t.removeAttribute('data-owner-hint')
+			t.querySelector('.preview')?.remove()
+		})
+	}
+	function markSelectable() {
+		ROWS.forEach((r, y) => { for (let x = 0; x < 7; x++) {
+			tileEl(`${r}${x}`).classList.toggle('selectable', ownerTeam(map.fields[y][x]) === 'p1')
+		} })
+	}
+
+	// ---- human 턴 ----
+	function humanTurn() {
+		return new Promise(resolve => {
+			let source = null
+			markSelectable()
+
+			const showLegal = () => {
+				for (const m of map.legalMovesFrom(USERS.ID0, source)) {
+					const lt = tileEl(posStr(m))
+					lt.classList.add('legal')
+					lt.dataset.ownerHint = 'p1'
+					lt.dataset.moveType = m.type === STATE.ATTACK.MOVE ? 'move' : 'clone'
+				}
 			}
-			await sleep(1200)
+			const finish = out => {
+				board.removeEventListener('click', onBoardClick)
+				board.removeEventListener('pointerover', onOver)
+				board.removeEventListener('pointerout', onOut)
+				cancelHuman = null
+				resolve(out)
+			}
+			cancelHuman = () => finish(null)
+
+			function onBoardClick(e) {
+				const t = e.target.closest('.tile')
+				if (!t || paused) return
+				const { x, y } = posToXY(t.dataset.pos)
+				if (ownerTeam(map.fields[y][x]) === 'p1') { // 소스 (재)선택
+					clearHints(); markSelectable()
+					source = { x, y }
+					t.classList.add('selected')
+					showLegal()
+				} else if (source && t.classList.contains('legal')) { // 실행
+					finish({ from: source, to: { x, y } })
+				} else { // 빈 곳 = 선택 해제
+					clearHints(); markSelectable(); source = null
+				}
+			}
+			function onOver(e) {
+				const t = e.target.closest('.tile.legal')
+				if (!t || t.querySelector('.preview')) return
+				const isMove = t.dataset.moveType === 'move'
+				const pv = document.createElement('div')
+				pv.className = 'preview'
+				pv.innerHTML = `<div class="ghost"></div><div class="aim ${isMove ? 'move' : 'clone'}"></div><div class="badge">${isMove ? '↗ 이동' : '＋ 복제'}</div>`
+				t.appendChild(pv)
+			}
+			function onOut(e) {
+				const t = e.target.closest('.tile')
+				if (t && !t.contains(e.relatedTarget)) t.querySelector('.preview')?.remove()
+			}
+
+			board.addEventListener('click', onBoardClick)
+			board.addEventListener('pointerover', onOver)
+			board.addEventListener('pointerout', onOut)
+		})
+	}
+
+	async function execMove(team, userId, from, to) {
+		const legal = map.legalMovesFrom(userId, from).find(m => m.x === to.x && m.y === to.y)
+		const fromPos = posStr(from), toPos = posStr(to)
+		if (legal.type === STATE.ATTACK.MOVE) {
+			await playJump(board, ships[team], {
+				fromPos, toPos,
+				onPickup: () => { tileEl(fromPos).querySelector('.cell')?.remove() },
+				onDrop: () => { map.applyMove(userId, from, to); syncTile(toPos, { pop: true }); syncAll() }
+			})
+		} else {
+			await playMove(board, ships[team], {
+				pos: toPos,
+				onImpact: () => { map.applyMove(userId, from, to); syncTile(toPos, { pop: true }); syncAll() }
+			})
 		}
 	}
-	loop()
+
+	function finishGame() {
+		running = false
+		clearHints()
+		const own = map.count[USERS.ID0]
+		const enemy = map.count[USERS.ID1]
+		ctx.go('result', { stage, difficulty, result: own > enemy ? 'win' : 'lose', own, enemy, turns })
+	}
+
+	async function turnLoop() {
+		ships = await mountShips(board)
+		reset()
+		await sleep(300)
+		let cur = USERS.ID0 // human 선공
+		while (running) {
+			while (paused && running) await sleep(120)
+			if (!running) return
+			if (map.isTerminal()) return finishGame()
+
+			if (map.legalMoves(cur).length === 0) { // 패스
+				cur = other(cur)
+				if (map.legalMoves(cur).length === 0) return finishGame()
+				continue
+			}
+
+			turnEl.textContent = cur === USERS.ID0 ? '내 차례 — 세균을 선택' : 'AI 차례…'
+			if (cur === USERS.ID0) {
+				const mv = await humanTurn()
+				if (!running || !mv) return
+				clearHints()
+				await execMove('p1', USERS.ID0, mv.from, mv.to)
+			} else {
+				await sleep(450)
+				const mv = pickMove(map, USERS.ID1)
+				if (mv) await execMove('p2', USERS.ID1, mv.from, mv.to)
+			}
+			turns++
+			cur = other(cur)
+		}
+	}
+	turnLoop()
 
 	function openPause() {
 		const ov = div('pause-overlay', `
@@ -135,23 +234,11 @@ export function playScene(ctx) {
 		onClick(ov, 'data-p', p => {
 			if (p === 'resume') { paused = false; ov.remove() }
 			else if (p === 'settings') ctx.go('settings')
-			else if (p === 'quit') ctx.go('stage-select')
+			else if (p === 'quit') ctx.go('stage-select', { difficulty })
 		})
 		el.appendChild(ov)
 	}
+	onClick(el, 'data-act', act => { if (act === 'pause') { paused = true; openPause() } })
 
-	// 데모 결과 버튼 — 현재 보드 상태를 실전과 동일한 params 로 전달 (B에서 실제 종료판정으로 대체)
-	const finish = result => ctx.go('result', {
-		stage, difficulty, result,
-		own: map?.count[USERS.ID0] ?? 0,
-		enemy: map?.count[USERS.ID1] ?? 0,
-		turns
-	})
-	onClick(el, 'data-act', act => {
-		if (act === 'pause') { paused = true; openPause() }
-		else if (act === 'win') finish('win')
-		else if (act === 'lose') finish('lose')
-	})
-
-	return { el, cleanup() { running = false } }
+	return { el, cleanup() { running = false; cancelHuman?.() } }
 }

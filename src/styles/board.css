@@ -62,3 +62,70 @@
 	opacity: 0.55;
 	font-size: 0.9em;
 }
+
+.turn-label {
+	font-family: var(--font-title);
+	font-size: 1.2rem;
+	min-height: 1.4em;
+}
+
+/* ---------- 인터랙션 (PHASE B) ---------- */
+/* 내 세균 = 선택 가능 → 손 커서 */
+.tile.selectable { cursor: url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer; }
+/* 선택된 소스 세균 = 사각 프레임 강조 */
+.tile.selected {
+	border-image: var(--frame-square) 25 / .55em / .15em;
+	animation: sel-pulse 1s ease-in-out infinite;
+}
+@keyframes sel-pulse {
+	0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+	50%      { filter: drop-shadow(0 0 .35em var(--p1)); }
+}
+/* 합법 타겟 = 포인터 커서 */
+.tile.legal { cursor: url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer; }
+
+/* 호버 미리보기 오버레이 (cell_small 고스트 + crosshair + 복제/이동 뱃지) */
+.tile .preview {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	display: grid;
+	place-items: center;
+}
+.tile .preview .ghost {
+	position: absolute;
+	inset: 14%;
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+	opacity: .5;
+}
+.tile.legal[data-owner-hint="p1"] .ghost { background-image: var(--cell-p1-sm); }
+.tile .preview .aim {
+	position: absolute;
+	inset: 4%;
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+.tile .preview .aim.clone { background-image: url(/germ-warfare/assets/crosshair/aim-clone.png); }
+.tile .preview .aim.move { background-image: url(/germ-warfare/assets/crosshair/aim-move.png); }
+.tile .preview .badge {
+	position: absolute;
+	top: -1.1em;
+	font-size: .5em;
+	font-family: var(--font-body);
+	background: #efeee7cc;
+	padding: 0 .35em;
+	border-radius: .3em;
+	white-space: nowrap;
+}
+
+/* 운반 세균 (MOVE 애니) */
+.carry-germ {
+	position: absolute;
+	left: 0; top: 0;
+	width: 1.5em;
+	will-change: transform;
+	filter: drop-shadow(0 .15em .1em #0000002e);
+}

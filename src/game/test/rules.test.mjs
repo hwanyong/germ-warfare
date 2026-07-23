@@ -57,6 +57,40 @@ test('A2 legalMoves: 초기 상태에서 양팀 모두 합법수 존재, 좌표�
 	for (const { x, y } of m0) assert.equal(map.fields[y][x], null)
 })
 
+test('B applyMove: CLONE(거리1) 원본유지 +1, MOVE(거리2) 원본소멸 순증0', () => {
+	// CLONE
+	const a = seededGame(11)
+	const before = a.count[USERS.ID0]
+	a.applyMove(USERS.ID0, { x: 0, y: 0 }, { x: 1, y: 1 }) // 거리1
+	assert.equal(a.count[USERS.ID0], before + 1)
+	assert.equal(a.fields[1][1], USERS.ID0)
+	assert.equal(a.fields[0][0], USERS.ID0) // 원본 유지
+
+	// MOVE (거리2): 원본 소멸 → 순증 0 (감염 없을 때)
+	const b = seededGame(11)
+	const c0 = b.count[USERS.ID0]
+	b.applyMove(USERS.ID0, { x: 0, y: 0 }, { x: 2, y: 2 }) // 거리2
+	assert.equal(b.fields[2][2], USERS.ID0)
+	assert.equal(b.fields[0][0], null) // 원본 소멸
+	assert.equal(b.count[USERS.ID0], c0) // 순증 0
+
+	// 불법 이동은 throw
+	assert.throws(() => a.applyMove(USERS.ID0, { x: 0, y: 0 }, { x: 5, y: 5 }))
+})
+
+test('B legalMovesFrom: 자기 칸에서만, 거리1=CLONE 거리2=MOVE', () => {
+	const map = seededGame(11)
+	const from = { x: 0, y: 0 }
+	const moves = map.legalMovesFrom(USERS.ID0, from)
+	assert.ok(moves.length > 0)
+	for (const m of moves) {
+		const d = Math.max(Math.abs(m.x - from.x), Math.abs(m.y - from.y))
+		assert.ok(d === 1 || d === 2)
+		assert.equal(map.fields[m.y][m.x], null)
+	}
+	assert.equal(map.legalMovesFrom(USERS.ID1, from).length, 0) // 남의 칸
+})
+
 test('A2 terminal/winner: 초기 미종료, 전멸 시 종료·승자 판정', () => {
 	const map = seededGame(11)
 	assert.equal(map.isTerminal(), false)
