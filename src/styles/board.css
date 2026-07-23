@@ -98,14 +98,19 @@
 /* ---------- 인터랙션 (PHASE B) ---------- */
 /* 내 세균 = 선택 가능 → 손 커서 */
 .tile.selectable { cursor: url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer; }
-/* 선택된 소스 세균 = 사각 프레임 강조 */
-.tile.selected {
-	border-image: var(--frame-square) 25 / .55em / .15em;
+/* 선택된 소스 세균 = 사각 프레임 강조 (::after 오버레이 — border 미변경, 이웃 무간섭) */
+.tile.selected::after {
+	content: '';
+	position: absolute;
+	inset: 2%;
+	z-index: 3;
+	pointer-events: none;
+	background: var(--frame-square) center / 100% 100% no-repeat;
 	animation: sel-pulse 1s ease-in-out infinite;
 }
 @keyframes sel-pulse {
-	0%, 100% { filter: drop-shadow(0 0 0 transparent); }
-	50%      { filter: drop-shadow(0 0 .35em var(--p1)); }
+	0%, 100% { filter: drop-shadow(0 0 0 transparent); opacity: .85; }
+	50%      { filter: drop-shadow(0 0 .3em var(--p1)); opacity: 1; }
 }
 /* 합법 타겟 = 포인터 커서 */
 .tile.legal { cursor: url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer; }

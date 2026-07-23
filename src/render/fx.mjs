@@ -125,8 +125,8 @@ class Ship {
 export async function mountShips(board) {
 	const layer = board.querySelector('.fx-layer')
 	const ships = {
-		p1: new Ship(layer, 'p1', { fx: 0.5, fy: 0.04 }), // 상단 진영
-		p2: new Ship(layer, 'p2', { fx: 0.5, fy: 0.96 })  // 하단 진영
+		p1: new Ship(layer, 'p1', { fx: -0.1, fy: 0.02 }), // 좌상단 바깥 왼쪽
+		p2: new Ship(layer, 'p2', { fx: 1.1, fy: 0.98 })   // 우하단 바깥 오른쪽
 	}
 	await Promise.all([ships.p1.ready, ships.p2.ready])
 	for (const s of Object.values(ships)) {
