@@ -3,6 +3,8 @@
 import { div, onClick } from '../dom.mjs'
 import { GameMap, USERS } from '../../game/index.mjs'
 import { installFx, mountShips, playMove, WOBBLE_VARIANTS } from '../../render/fx.mjs'
+import { STAGES } from '../../data/stages.mjs'
+import { isTutorialDone } from '../../storage/progress.mjs'
 
 const ROWS = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
 const teamUser = t => (t === 'p1' ? USERS.ID0 : USERS.ID1)
@@ -17,10 +19,19 @@ const SCRIPT = [
 
 export function playScene(ctx) {
 	const { stage = 'stage-01', difficulty = 'normal' } = ctx.params
+
+	// A6: 첫 플레이 = 튜토리얼 자동 (완료 후 play 로 복귀)
+	if (!isTutorialDone()) {
+		queueMicrotask(() => ctx.go('tutorial', { returnTo: 'play', stage, difficulty }))
+		return { el: div('scene') }
+	}
+
+	const stageData = STAGES[stage]
 	let running = true
 	let paused = false
 	let map
 	let ships
+	let turns = 0
 
 	const el = div('scene', `
 		<div class="play-top">
@@ -80,11 +91,11 @@ export function playScene(ctx) {
 	function reset() {
 		map = new GameMap({ seed: 42 })
 		map.clear()
-		map.initField(USERS.ID0, { x: 0, y: 0 })
-		map.initField(USERS.ID0, { x: 6, y: 0 })
-		map.initField(USERS.ID1, { x: 0, y: 6 })
-		map.initField(USERS.ID1, { x: 6, y: 6 })
+		// A3: 스테이지 데이터의 시드 사용 (하드코딩 금지)
+		stageData.seeds.p1.forEach(a => map.initField(USERS.ID0, a))
+		stageData.seeds.p2.forEach(a => map.initField(USERS.ID1, a))
 		map.initialized()
+		turns = 0
 		board.querySelectorAll('.cell').forEach(c => c.remove())
 		syncAll()
 	}
@@ -102,6 +113,7 @@ export function playScene(ctx) {
 					onImpact: () => {
 						const { x, y } = posToXY(mv.pos)
 						map.setField(teamUser(mv.team), { x, y })
+						turns++
 						syncTile(mv.pos, { pop: true })
 						syncAll()
 					}
@@ -128,10 +140,17 @@ export function playScene(ctx) {
 		el.appendChild(ov)
 	}
 
+	// 데모 결과 버튼 — 현재 보드 상태를 실전과 동일한 params 로 전달 (B에서 실제 종료판정으로 대체)
+	const finish = result => ctx.go('result', {
+		stage, difficulty, result,
+		own: map?.count[USERS.ID0] ?? 0,
+		enemy: map?.count[USERS.ID1] ?? 0,
+		turns
+	})
 	onClick(el, 'data-act', act => {
 		if (act === 'pause') { paused = true; openPause() }
-		else if (act === 'win') ctx.go('result', { stage, difficulty, result: 'win', score: 820, best: 640, newBest: true })
-		else if (act === 'lose') ctx.go('result', { stage, difficulty, result: 'lose', score: 210, best: 640 })
+		else if (act === 'win') finish('win')
+		else if (act === 'lose') finish('lose')
 	})
 
 	return { el, cleanup() { running = false } }

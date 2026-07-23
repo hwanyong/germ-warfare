@@ -287,6 +287,39 @@ class GameMap {
 		return this.#seed
 	}
 
+	//#region A2: legalMoves / terminal / winner (docs/roadmap.md PHASE A)
+	/** userId 가 점령 가능한 빈 칸 목록. @returns {{x,y,type}[]} type=STATE.ATTACK.CLONE|MOVE */
+	legalMoves = userId => {
+		const moves = []
+		this.#fields.forEach((row, y) => row.forEach((field, x) => {
+			if (field.owner) return
+			const t = field.score.attack[userId]
+			if (t === STATE.ATTACK.CLONE || t === STATE.ATTACK.MOVE) moves.push({ x, y, type: t })
+		}))
+		return moves
+	}
+	/** 보드 총 칸 수 */
+	get totalCells() {
+		return this.#fields.length * this.#fields[0].length
+	}
+	/** 종료 판정: 보드 꽉참 / 한 팀 전멸 / 양 팀 모두 합법수 없음 */
+	isTerminal = () => {
+		const c0 = this.#count[USERS.ID0]
+		const c1 = this.#count[USERS.ID1]
+		if (c0 + c1 >= this.totalCells) return true
+		if (c0 === 0 || c1 === 0) return true
+		if (this.legalMoves(USERS.ID0).length === 0 && this.legalMoves(USERS.ID1).length === 0) return true
+		return false
+	}
+	/** 승자 userId, 무승부면 null (isTerminal 후 호출) */
+	winner = () => {
+		const c0 = this.#count[USERS.ID0]
+		const c1 = this.#count[USERS.ID1]
+		if (c0 === c1) return null
+		return c0 > c1 ? USERS.ID0 : USERS.ID1
+	}
+	//#endregion
+
 	initialized = () => {
 		this.#canInit = false
 

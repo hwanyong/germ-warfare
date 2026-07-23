@@ -28,7 +28,7 @@
 
 ## 작업 순서 (재구성)
 
-### PHASE A — 씬 뼈대 + 엔진 갭  [3-1]
+### PHASE A — 씬 뼈대 + 엔진 갭  [3-1]  ✅ 완료 (A1~A7)
 
 **씬 셋**: Title · StageSelect · Play(+Pause) · Result(승/패 분기) · Settings · **Tutorial** · **Credits/Legal**. (Intro/Story = 추후 훅만)
 

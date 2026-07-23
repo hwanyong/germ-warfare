@@ -48,3 +48,26 @@ test('결정성: 동일 시드 + 동일 수순 → 동일 결과', () => {
 	}
 	assert.equal(play(7), play(7))
 })
+
+test('A2 legalMoves: 초기 상태에서 양팀 모두 합법수 존재, 좌표는 빈 칸', () => {
+	const map = seededGame(11)
+	const m0 = map.legalMoves(USERS.ID0)
+	const m1 = map.legalMoves(USERS.ID1)
+	assert.ok(m0.length > 0 && m1.length > 0)
+	for (const { x, y } of m0) assert.equal(map.fields[y][x], null)
+})
+
+test('A2 terminal/winner: 초기 미종료, 전멸 시 종료·승자 판정', () => {
+	const map = seededGame(11)
+	assert.equal(map.isTerminal(), false)
+	assert.equal(map.totalCells, 49)
+
+	// ID1 전멸 시나리오: 초기화만 ID0 4칸으로
+	const solo = new GameMap({ seed: 3 })
+	solo.clear()
+	solo.initField(USERS.ID0, { x: 0, y: 0 })
+	solo.initField(USERS.ID0, { x: 6, y: 6 })
+	solo.initialized()
+	assert.equal(solo.isTerminal(), true) // count[ID1]==0
+	assert.equal(solo.winner(), USERS.ID0)
+})

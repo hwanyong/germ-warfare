@@ -11,7 +11,15 @@ export function settingsScene(ctx) {
 			<div class="btn-row"><span>모션 감소</span> <button class="btn" data-toggle="motion">준비중</button></div>
 			<div class="btn-row"><span>기본 난이도</span> <button class="btn" data-toggle="diff">NORMAL</button></div>
 		</div>
+		<div class="btn-row">
+			<button class="btn" data-act="tutorial">튜토리얼 다시</button>
+			<button class="btn" data-act="credits">크레딧</button>
+		</div>
 	`)
-	onClick(el, 'data-act', act => { if (act === 'back') ctx.back() })
+	onClick(el, 'data-act', act => {
+		if (act === 'back') ctx.back()
+		else if (act === 'tutorial') ctx.go('tutorial', {})
+		else if (act === 'credits') ctx.go('credits')
+	})
 	return { el }
 }
