@@ -18,10 +18,10 @@ Kenney 에셋은 CC0라 출처 표기 의무는 없으나 감사 표기한다.
 | 조준 (`crosshair/`) | **Crosshair Pack** | https://kenney.nl/assets/crosshair-pack |
 | 커서 (`cursor/`) | **Cursor Pack** | https://kenney.nl/assets/cursor-pack |
 | UI (`ui/uipack.svg`) | **UI Pack** | https://kenney.nl/assets/ui-pack |
-| 종이 텍스처 (`paper.jpg`) | **Pattern Pack** (추정) ※출처 확인 필요 | https://kenney.nl/assets/pattern-pack |
 
-> ⚠️ `paper.jpg`(원본명 `0111b-1024x1024.jpg`)는 Kenney 명명 규칙과 달라 출처 미확정.
-> Pattern Pack의 확인된 CC0 타일로 교체하거나 정확 출처를 확정할 것.
+### 종이 텍스처 (`paper.jpg`) — ambientCG (CC0)
+- **ambientCG "Paper 001"** — CC0. https://ambientcg.com/view?id=Paper001
+- (기존 출처 불명 텍스처 `0111b-...jpg`는 어그리게이터 경유·라이선스 미확인이라 폐기, CC0로 교체됨.)
 
 ## 폰트 (Google Fonts — SIL Open Font License 1.1)
 
