@@ -90,6 +90,20 @@
 .laser-beam[data-team="p1"] { background-image: url(/germ-warfare/assets/laser/beam-p1.png); }
 .laser-beam[data-team="p2"] { background-image: url(/germ-warfare/assets/laser/beam-p2.png); }
 
+/* N:N — p3/p4 는 레이저 에셋 없음: p1/p2 빔 재활용 + hue 변주 (SHIP_DEF 와 동일 색) */
+.laser-beam[data-team="p3"],
+.impact-flash[data-team="p3"] { color: #58a6ff; }
+.laser-beam[data-team="p4"],
+.impact-flash[data-team="p4"] { color: #d9a021; }
+.laser-beam[data-team="p3"] {
+	background-image: url(/germ-warfare/assets/laser/beam-p1.png);
+	filter: hue-rotate(80deg) drop-shadow(0 0 0.3em currentColor) drop-shadow(0 0 0.7em currentColor);
+}
+.laser-beam[data-team="p4"] {
+	background-image: url(/germ-warfare/assets/laser/beam-p2.png);
+	filter: hue-rotate(60deg) drop-shadow(0 0 0.3em currentColor) drop-shadow(0 0 0.7em currentColor);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.cell { filter: none !important; animation: none !important; }
 	.ship > img { animation: none; }

@@ -132,12 +132,18 @@ export function playScene(ctx) {
 			cell = document.createElement('div')
 			const wob = Math.floor(Math.random() * WOBBLE_VARIANTS)
 			cell.className = `cell w${wob}`
+			cell.dataset.wob = wob
 			cell.style.setProperty('--bd', `${(2.6 + Math.random() * 1.8).toFixed(2)}s`)
 			cell.style.setProperty('--bdelay', `${(Math.random() * -4).toFixed(2)}s`)
-			if (TEAM_HUE[owner]) cell.style.filter = `url(#germ-wobble-${wob}) hue-rotate(${TEAM_HUE[owner]}deg)`
 			t.appendChild(cell)
 		}
-		cell.dataset.owner = owner
+		if (cell.dataset.owner !== owner) {
+			// 오너 변경(감염 포함): hue 를 반드시 재설정 — 이전 팀 hue 잔존 시 색이 안 바뀌어 보임
+			cell.dataset.owner = owner
+			cell.style.filter = TEAM_HUE[owner]
+				? `url(#germ-wobble-${cell.dataset.wob}) hue-rotate(${TEAM_HUE[owner]}deg)`
+				: '' // p1/p2 는 클래스(w{n}) filter 로 복원
+		}
 		if (pop) cell.animate(
 			[{ transform: 'scale(0)' }, { transform: 'scale(1.18)', offset: 0.7 }, { transform: 'scale(1)' }],
 			{ duration: 320, easing: 'cubic-bezier(.3,1.3,.5,1)' }

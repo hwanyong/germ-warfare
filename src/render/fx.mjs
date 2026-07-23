@@ -47,13 +47,18 @@ export function installFx() {
 	document.body.appendChild(svg)
 }
 
+// 팀 → 스프라이트/hue (p3/p4 는 에셋 없음 — p1/p2 재활용 + hue 변주)
+const fxSprite = team => SHIP_DEF[team]?.sprite ?? team
+const fxHue = team => SHIP_DEF[team]?.hue ?? 0
+
 // burst 스파크 (손그림, 팀색). px 지정 시 그 크기, 아니면 CSS 기본(착탄용).
 function spark(layer, team, x, y, px) {
 	const s = el('img', 'laser-spark')
-	s.src = `${BASE}/laser/burst-${team}.png`
+	s.src = `${BASE}/laser/burst-${fxSprite(team)}.png`
 	s.style.left = `${x}px`
 	s.style.top = `${y}px`
 	if (px) s.style.width = `${px}px`
+	if (fxHue(team)) s.style.filter = `hue-rotate(${fxHue(team)}deg)`
 	layer.appendChild(s)
 	s.animate(
 		[
@@ -260,7 +265,8 @@ export async function playJump(board, ship, { fromPos, toPos, onPickup, onDrop }
 	onPickup?.() // 모델: 소스 세균 제거 (렌더가 소스 germ 축소/제거)
 
 	const mini = el('img', 'carry-germ')
-	mini.src = `${BASE}/cell-${ship.team === 'p1' ? 'green' : 'pink'}-sm.png`
+	mini.src = `${BASE}/cell-${fxSprite(ship.team) === 'p1' ? 'green' : 'pink'}-sm.png`
+	if (fxHue(ship.team)) mini.style.filter = `hue-rotate(${fxHue(ship.team)}deg)`
 	mini.style.left = '0'; mini.style.top = '0'
 	layer.appendChild(mini)
 	const cargoY = m => m.top - m.h * 1.1 + ship.h * 1.05 - FIRE_LIFT // 배 아래
