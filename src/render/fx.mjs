@@ -234,6 +234,28 @@ function tileMetric(board, pos) {
 }
 
 /**
+ * 자동 마무리 채움 — 우주선이 타겟 위로 짧게 이동 후 즉시 생성(레이저 생략, 빠른 템포).
+ * 연속 호출용(귀환 없음). 시퀀스 끝에 shipHome() 호출.
+ */
+export async function playQuickFill(board, ship, { pos, onImpact }) {
+	const layer = board.querySelector('.fx-layer')
+	const tile = board.querySelector(`.tile[data-pos="${pos}"]`)
+	if (!ship || !tile) { onImpact?.(); return }
+	const T = tileMetric(board, pos)
+	const airY = T.top - T.h * 0.7 + ship.h / 2
+	await ship.moveTo(T.cx, airY, 180)
+	spark(layer, ship.team, T.cx, T.cy)
+	impactFlash(layer, ship.team, T.cx, T.cy)
+	onImpact?.()
+	await wait(90)
+}
+
+/** 우주선 홈 귀환 */
+export async function shipHome(ship) {
+	await ship.moveTo(ship.home.x, ship.home.y, 420)
+}
+
+/**
  * MOVE(점프) 애니 — 우주선이 소스 세균을 수거해 타겟으로 운반 후 생성.
  * @param {{fromPos, toPos, onPickup?, onDrop?}} opts
  */

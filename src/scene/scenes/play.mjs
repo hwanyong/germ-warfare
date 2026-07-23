@@ -3,8 +3,9 @@
 // clone=레이저 생성 애니, move=우주선 수거→운반→생성 애니. 종료판정→Result.
 import { div, onClick } from '../dom.mjs'
 import { GameMap, USERS, BLOCKED, STATE, mulberry32 } from '../../game/index.mjs'
-import { installFx, mountShips, playMove, playJump, WOBBLE_VARIANTS } from '../../render/fx.mjs'
+import { installFx, mountShips, playMove, playJump, playQuickFill, shipHome, WOBBLE_VARIANTS } from '../../render/fx.mjs'
 import { pickMove, effectiveDifficulty } from '../../game/ai.mjs'
+import { gridMoves } from '../../game/map.mjs'
 import { STAGES } from '../../data/stages.mjs'
 import { isTutorialDone } from '../../storage/progress.mjs'
 import { t, getLang } from '../../i18n/index.mjs'
@@ -257,6 +258,28 @@ export function playScene(ctx) {
 		postMove(before, toPos) // 감염 뒤집기 애니 + 점령 마을 파괴
 	}
 
+	// 자동 마무리 — 인터랙션 차단, CLONE 만(빈칸 단조 감소 → 타팀 부활 불가) 순차 채움
+	async function autoFinish(filler) {
+		clearHints()
+		turnEl.textContent = t('play.finishing')
+		const ship = ships[viewOf(filler)]
+		while (running && !map.isTerminal()) {
+			while (paused && running) await sleep(120)
+			const g = map.fields.map(r => r.slice())
+			const clones = gridMoves(g, filler).filter(m => m.clone)
+			if (!clones.length) break // 도달 불가 지역만 남음 → 그대로 종료
+			const mv = clones[0]
+			const before = map.fields.map(r => r.slice())
+			await playQuickFill(board, ship, {
+				pos: posStr(mv.to),
+				onImpact: () => { map.applyMove(filler, mv.from, mv.to); syncTile(posStr(mv.to), { pop: true }); syncAll() }
+			})
+			postMove(before, posStr(mv.to))
+		}
+		if (running) await shipHome(ship)
+		if (running) finishGame()
+	}
+
 	function finishGame() {
 		running = false
 		clearHints()
@@ -275,6 +298,13 @@ export function playScene(ctx) {
 			while (paused && running) await sleep(120)
 			if (!running) return
 			if (map.isTerminal()) return finishGame()
+
+			// 자동 마무리: 둘 수 있는 팀이 단 하나뿐이면(나머지 생존팀 전부 무수)
+			{
+				const alive = ENGINE_TEAMS.filter(u => map.count[u] > 0)
+				const canMove = alive.filter(u => map.legalMoves(u).length > 0)
+				if (alive.length >= 2 && canMove.length === 1) return autoFinish(canMove[0])
+			}
 
 			const cur = ENGINE_TEAMS[idx % ENGINE_TEAMS.length]
 			idx++
