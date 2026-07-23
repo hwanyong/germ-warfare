@@ -1,0 +1,71 @@
+/* 씬 레이아웃 — 손그림 프레임 버튼 + 중앙 정렬. */
+
+.scene {
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1.1em;
+	padding: 1.2em;
+	text-align: center;
+}
+.scene .logo { font-family: var(--font-title); font-size: 3rem; line-height: 1; }
+.scene .sub { color: #00000066; letter-spacing: .18em; font-size: .85em; margin-top: -.5em; }
+.scene .num { font-family: var(--font-num); font-weight: 700; }
+
+.btn-col { display: flex; flex-direction: column; align-items: center; gap: .7em; }
+.btn-row { display: flex; gap: .7em; flex-wrap: wrap; justify-content: center; }
+
+.btn {
+	font-family: var(--font-body);
+	font-size: 1.25rem;
+	line-height: 1.1;
+	color: var(--ink);
+	background: none;
+	padding: .32em 1.2em .18em;
+	border: 0;
+	border-image: var(--frame-circle) 62 / .9em / .12em;
+	transition: transform .09s ease;
+}
+.btn:hover { transform: scale(1.05); }
+.btn:active { transform: scale(.96); }
+.btn.primary { font-size: 1.7rem; padding: .34em 1.5em .2em; }
+.btn.big { font-size: 2rem; padding: .36em 1.8em .22em; }
+.btn[aria-selected="true"] { background: var(--p1-soft); }
+
+.card {
+	border-image: var(--frame-thin) 9 / .4em / 0;
+	padding: 1em 1.4em;
+	display: flex;
+	flex-direction: column;
+	gap: .5em;
+	align-items: center;
+}
+
+/* Play HUD + Pause */
+.play-top {
+	position: fixed; top: .5em; left: 0; right: 0; z-index: 10;
+	display: flex; justify-content: space-between; align-items: center;
+	padding: 0 .8em; font-size: .85em;
+}
+.play-hud { display: flex; align-items: center; gap: .4em; }
+.pause-overlay {
+	position: fixed; inset: 0; z-index: 20;
+	background: #efeee7d9;
+	display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8em;
+}
+.pause-overlay .logo { font-family: var(--font-title); font-size: 1.8rem; }
+
+/* Result */
+.result-head { font-family: var(--font-title); font-size: 2.6rem; }
+.result-head.win { color: var(--p1); }
+.result-head.lose { color: var(--p2); }
+.badge-new { font-family: var(--font-num); color: var(--p1); font-weight: 700; }
+
+/* Credits */
+.credits-body { max-width: 30em; font-size: .95em; line-height: 1.7; }
+.credits-body a { color: var(--p1); text-decoration: none; }
+.credits-body .owner { font-weight: 700; }
+
+.back-btn { position: fixed; left: .8em; top: .8em; z-index: 10; }
