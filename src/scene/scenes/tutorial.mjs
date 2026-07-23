@@ -5,17 +5,18 @@
 import { div, onClick } from '../dom.mjs'
 import { WOBBLE_VARIANTS } from '../../render/fx.mjs'
 import { setTutorialDone } from '../../storage/progress.mjs'
+import { t } from '../../i18n/index.mjs'
 
 const A = '/germ-warfare/assets'
 const idx = (x, y) => y * 3 + x
 
 // 시나리오: p1=(0,1), p2=(2,0). 복제→이동→감염 순.
 const STEPS = [
-	{ msg: '① 내 세균(초록)을 클릭!', target: idx(0, 1), aim: null },
-	{ msg: '② 바로 옆 빈칸 클릭 = 복제 (원본 유지)', target: idx(1, 1), aim: 'aim-clone' },
-	{ msg: '③ 두 칸 떨어진 빈칸 클릭 = 이동 (원본 소멸)', target: idx(2, 2), aim: 'aim-move' },
-	{ msg: '④ 적(핑크) 옆에 두면 감염! 클릭해 보자', target: idx(1, 0), aim: 'aim-clone' },
-	{ msg: '⑤ 완료! 칸이 더 많은 쪽이 승리한다', target: null, aim: null }
+	{ key: 'tutorial.s1', target: idx(0, 1), aim: null },
+	{ key: 'tutorial.s2', target: idx(1, 1), aim: 'aim-clone' },
+	{ key: 'tutorial.s3', target: idx(2, 2), aim: 'aim-move' },
+	{ key: 'tutorial.s4', target: idx(1, 0), aim: 'aim-clone' },
+	{ key: 'tutorial.s5', target: null, aim: null }
 ]
 
 export function tutorialScene(ctx) {
@@ -27,13 +28,13 @@ export function tutorialScene(ctx) {
 	owners[idx(2, 0)] = 'p2'
 
 	const el = div('scene', `
-		<button class="btn back-btn" data-act="skip">← 스킵</button>
-		<div class="logo" style="font-size:2rem">튜토리얼</div>
+		<button class="btn back-btn" data-act="skip">← ${t('tutorial.skip')}</button>
+		<div class="logo" style="font-size:2rem">${t('tutorial.title')}</div>
 		<div class="card" style="min-width:16em"><div id="tut-msg"></div></div>
 		<div class="board" id="mini" style="width:min(60vmin,300px);grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)">
 			${Array.from({ length: 9 }, (_, i) => `<div class="tile frame-thin" data-i="${i}"></div>`).join('')}
 		</div>
-		<button class="btn primary" data-act="done" style="visibility:hidden">완료</button>
+		<button class="btn primary" data-act="done" style="visibility:hidden">${t('tutorial.done')}</button>
 	`)
 
 	const msgEl = el.querySelector('#tut-msg')
@@ -56,7 +57,7 @@ export function tutorialScene(ctx) {
 	}
 	function renderStep() {
 		const s = STEPS[step]
-		msgEl.textContent = s.msg
+		msgEl.textContent = t(s.key)
 		// crosshair 안내: 타겟 칸에 aim 이미지 표시
 		tiles.forEach(t => t.querySelector('.tut-aim')?.remove())
 		if (s.target != null && s.aim) {

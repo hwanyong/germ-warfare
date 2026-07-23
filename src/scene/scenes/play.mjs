@@ -7,6 +7,7 @@ import { installFx, mountShips, playMove, playJump, WOBBLE_VARIANTS } from '../.
 import { pickMove } from '../../game/ai.mjs'
 import { STAGES } from '../../data/stages.mjs'
 import { isTutorialDone } from '../../storage/progress.mjs'
+import { t } from '../../i18n/index.mjs'
 
 const CARTO = '/germ-warfare/assets/cartography'
 const ROWS = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
@@ -202,7 +203,7 @@ export function playScene(ctx) {
 				const isMove = t.dataset.moveType === 'move'
 				const pv = document.createElement('div')
 				pv.className = 'preview'
-				pv.innerHTML = `<div class="ghost"></div><div class="aim ${isMove ? 'move' : 'clone'}"></div><div class="badge">${isMove ? '↗ 이동' : '＋ 복제'}</div>`
+				pv.innerHTML = `<div class="ghost"></div><div class="badge">${isMove ? t('play.move') : t('play.clone')}</div>`
 				t.appendChild(pv)
 			}
 			function onOut(e) {
@@ -259,7 +260,7 @@ export function playScene(ctx) {
 				continue
 			}
 
-			turnEl.textContent = cur === USERS.ID0 ? '내 차례 — 세균을 선택' : 'AI 차례…'
+			turnEl.textContent = cur === USERS.ID0 ? t('play.yourTurn') : t('play.aiTurn')
 			if (cur === USERS.ID0) {
 				const mv = await humanTurn()
 				if (!running || !mv) return
@@ -278,10 +279,10 @@ export function playScene(ctx) {
 
 	function openPause() {
 		const ov = div('pause-overlay', `
-			<div class="logo">일시정지</div>
-			<button class="btn primary" data-p="resume">재개</button>
-			<button class="btn" data-p="settings">설정</button>
-			<button class="btn" data-p="quit">포기</button>
+			<div class="logo">${t('play.paused')}</div>
+			<button class="btn primary" data-p="resume">${t('play.resume')}</button>
+			<button class="btn" data-p="settings">${t('play.settings')}</button>
+			<button class="btn" data-p="quit">${t('play.quit')}</button>
 		`)
 		onClick(ov, 'data-p', p => {
 			if (p === 'resume') { paused = false; ov.remove() }

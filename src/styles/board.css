@@ -98,14 +98,14 @@
 /* ---------- 인터랙션 (PHASE B) ---------- */
 /* 내 세균 = 선택 가능 → 손 커서 */
 .tile.selectable { cursor: url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer; }
-/* 선택된 소스 세균 = 사각 프레임 강조 (::after 오버레이 — border 미변경, 이웃 무간섭) */
+/* 선택된 소스 세균 = 코너 브래킷 프레임 (aim-clone). ::after 오버레이 — 칸 프레임 미변경. */
 .tile.selected::after {
 	content: '';
 	position: absolute;
-	inset: 2%;
+	inset: -4%;
 	z-index: 3;
 	pointer-events: none;
-	background: var(--frame-square) center / 100% 100% no-repeat;
+	background: url(/germ-warfare/assets/crosshair/aim-clone.png) center / 100% 100% no-repeat;
 	animation: sel-pulse 1s ease-in-out infinite;
 }
 @keyframes sel-pulse {
@@ -132,15 +132,6 @@
 	opacity: .5;
 }
 .tile.legal[data-owner-hint="p1"] .ghost { background-image: var(--cell-p1-sm); }
-.tile .preview .aim {
-	position: absolute;
-	inset: 4%;
-	background-size: contain;
-	background-repeat: no-repeat;
-	background-position: center;
-}
-.tile .preview .aim.clone { background-image: url(/germ-warfare/assets/crosshair/aim-clone.png); }
-.tile .preview .aim.move { background-image: url(/germ-warfare/assets/crosshair/aim-move.png); }
 .tile .preview .badge {
 	position: absolute;
 	top: -1.1em;
