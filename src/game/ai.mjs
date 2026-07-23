@@ -14,13 +14,13 @@ export const DIFFICULTY = {
 	hard: { noise: 0, blunder: 0, depth: 3 }
 }
 
-// 즉시 감염 수 (그리드 기준)
+// 즉시 감염 수 (그리드 기준, 프리포올 = 모든 인접 타팀)
 function flipsAt(grid, userId, to) {
-	const enemy = rivalOf(userId)
 	let n = 0
 	for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
 		if (!dx && !dy) continue
-		if (grid[to.y + dy]?.[to.x + dx] === enemy) n++
+		const v = grid[to.y + dy]?.[to.x + dx]
+		if (v != null && v !== 'BLOCKED' && v !== userId) n++
 	}
 	return n
 }
@@ -72,7 +72,9 @@ export function pickMove(map, userId, difficulty = 'normal', rng = Math.random) 
 	const valued = moves.map(mv => ({ ...mv, v: moveValue(map, grid, userId, mv) }))
 
 	let pick
-	if (cfg.depth > 0) {
+	// negamax 는 2팀 전용(rivalOf) — 프리포올(3+팀)은 hard 도 그리디로 폴백
+	const twoTeams = (map.teams?.length ?? 2) === 2
+	if (cfg.depth > 0 && twoTeams) {
 		// Hard: negamax. 루트 정렬 = move값(αβ 효율) → 최고 탐색점수, 동점 시 move값.
 		valued.sort((a, b) => b.v - a.v)
 		let bestScore = -Infinity

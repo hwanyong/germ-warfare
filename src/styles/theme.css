@@ -93,3 +93,7 @@ h1,
 }
 .cell[data-owner="p1"] { background-image: var(--cell-p1); }
 .cell[data-owner="p2"] { background-image: var(--cell-p2); }
+
+/* N:N 프리포올 — p3/p4 는 p1/p2 스프라이트 재활용(+씬에서 hue-rotate) */
+.cell[data-owner="p3"] { background-image: var(--cell-p1); }
+.cell[data-owner="p4"] { background-image: var(--cell-p2); }

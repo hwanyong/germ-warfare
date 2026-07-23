@@ -27,22 +27,9 @@ class Field {
 		y: null
 	}
 	#owner = null
-	#rival = {
-		[USERS.ID0]: USERS.ID1,
-		[USERS.ID1]: USERS.ID0
-	}
+	#teams = [USERS.ID0, USERS.ID1] // N팀 일반화 (프리포올)
 	#riskMax = 6
-	#score = {
-		risk: {
-			[USERS.ID0]: 0,
-			[USERS.ID1]: 0
-		},
-		attack: {
-			// impossible: -1, move: Field object, clone: 1
-			[USERS.ID0]: STATE.ATTACK.INIT,
-			[USERS.ID1]: STATE.ATTACK.INIT
-		}
-	}
+	#score = { risk: {}, attack: {} }
 	#relatedFields = []
 	#rng = Math.random
 
@@ -50,13 +37,18 @@ class Field {
 		changed: (owner, axis) => {}
 	}
 
-	constructor(axis = null, events = {}, rng = Math.random) {
+	constructor(axis = null, events = {}, rng = Math.random, teams = [USERS.ID0, USERS.ID1]) {
 		if (!axis) {
 			throw new Error('Axis is required')
 		}
 
 		this.#axis = axis
 		this.#rng = rng
+		this.#teams = teams
+		for (const t of teams) {
+			this.#score.risk[t] = 0
+			this.#score.attack[t] = STATE.ATTACK.INIT
+		}
 
 		this.#events = {
 			...this.#events,
@@ -86,18 +78,21 @@ class Field {
 	}
 
 	calculate = () => {
-		this.#score.risk[USERS.ID0] = 0
-		this.#score.risk[USERS.ID1] = 0
-		this.#score.attack[USERS.ID0] = STATE.ATTACK.IMPOSSIBLE
-		this.#score.attack[USERS.ID1] = STATE.ATTACK.IMPOSSIBLE
+		for (const t of this.#teams) {
+			this.#score.risk[t] = 0
+			this.#score.attack[t] = STATE.ATTACK.IMPOSSIBLE
+		}
 
 		this.#relatedFields.forEach((fields, distance) => {
 			const score = Math.max(0, this.#riskMax - distance)
 
 			fields.forEach(field => {
-				if (!(field.owner in this.#rival)) return // null/BLOCKED 는 risk·attack 무관
+				if (!this.#teams.includes(field.owner)) return // null/BLOCKED 는 risk·attack 무관
 
-				this.#score.risk[this.#rival[field.owner]] += score
+				// 프리포올: owner 가 아닌 모든 팀이 이 말로부터 압박을 받는다
+				for (const t of this.#teams) {
+					if (t !== field.owner) this.#score.risk[t] += score
+				}
 
 				if (this.#owner) return
 
@@ -140,7 +135,8 @@ class Field {
 	}
 	infect = userId => {
 		this.#relatedFields[1].forEach(field => {
-			if (field.owner != this.#rival[userId]) return // include null
+			// 프리포올: 인접한 모든 타팀 말 감염 (null/BLOCKED 제외)
+			if (!this.#teams.includes(field.owner) || field.owner === userId) return
 
 			field.owner = userId
 		})
@@ -198,10 +194,8 @@ class GameMap {
 	#fields = []
 	#fieldsBasedOnUser = []
 
-	#count = {
-		[USERS.ID0]: 0,
-		[USERS.ID1]: 0
-	}
+	#teams = [USERS.ID0, USERS.ID1]
+	#count = {}
 
 	#seed = 0
 	#rng = Math.random
@@ -225,7 +219,7 @@ class GameMap {
 	}
 	#initFields = fields => fields.map((row, rowCrtIdx) => row.map((col, colCrtIdx) => new Field({ x: colCrtIdx, y: rowCrtIdx }, {
 		changed: this.#changeFieldOwner
-	}, this.#rng)))
+	}, this.#rng, this.#teams)))
 	#initRelatedFields = fields => {
 		return fields.map((row, rowCrtIdx) => row.map((col, colCrtIdx) => {
 			col.related = this.#generateRelatedFieldAboutCurrentField(fields, { x: colCrtIdx, y: rowCrtIdx })
@@ -243,17 +237,23 @@ class GameMap {
 		if (after in this.#count) this.#count[after]++
 	}
 
-	constructor({ events = {}, seed, grid, blocked } = {}) {
+	constructor({ events = {}, seed, grid, blocked, teams } = {}) {
 		this.#seed = seed ?? randomSeed()
 		this.#rng = mulberry32(this.#seed)
 		this.#w = grid?.w ?? 7
 		this.#h = grid?.h ?? 7
 		this.#blocked = blocked ?? []
+		this.#teams = teams ?? [USERS.ID0, USERS.ID1]
+		for (const t of this.#teams) this.#count[t] = 0
 
 		this.#events = {
 			...this.#events,
 			...events
 		}
+	}
+
+	get teams() {
+		return [...this.#teams]
 	}
 
 	get count() {
@@ -290,21 +290,24 @@ class GameMap {
 	get totalCells() {
 		return this.#w * this.#h - this.#blocked.length
 	}
-	/** 종료 판정: 보드 꽉참 / 한 팀 전멸 / 양 팀 모두 합법수 없음 */
+	/** 종료 판정: 보드 꽉참 / 생존팀 ≤1 / 전 생존팀 무수 (프리포올 일반화) */
 	isTerminal = () => {
-		const c0 = this.#count[USERS.ID0]
-		const c1 = this.#count[USERS.ID1]
-		if (c0 + c1 >= this.totalCells) return true
-		if (c0 === 0 || c1 === 0) return true
-		if (this.legalMoves(USERS.ID0).length === 0 && this.legalMoves(USERS.ID1).length === 0) return true
+		const total = this.#teams.reduce((s, t) => s + this.#count[t], 0)
+		if (total >= this.totalCells) return true
+		const alive = this.#teams.filter(t => this.#count[t] > 0)
+		if (alive.length <= 1) return true
+		if (alive.every(t => this.legalMoves(t).length === 0)) return true
 		return false
 	}
-	/** 승자 userId, 무승부면 null (isTerminal 후 호출) */
+	/** 승자 userId(최다 칸), 공동 1위면 null (isTerminal 후 호출) */
 	winner = () => {
-		const c0 = this.#count[USERS.ID0]
-		const c1 = this.#count[USERS.ID1]
-		if (c0 === c1) return null
-		return c0 > c1 ? USERS.ID0 : USERS.ID1
+		let best = null, bestC = -1, tie = false
+		for (const t of this.#teams) {
+			const c = this.#count[t]
+			if (c > bestC) { best = t; bestC = c; tie = false }
+			else if (c === bestC) tie = true
+		}
+		return tie ? null : best
 	}
 
 	/** 명시적 소스 기준 합법 타겟. from(자기 칸)에서 거리1=CLONE, 거리2=MOVE 인 빈 칸. */
@@ -381,8 +384,7 @@ class GameMap {
 		this.#fields = this.#initFields(blank)
 		this.#fields = this.#initRelatedFields(this.#fields)
 
-		this.#count[USERS.ID0] = 0
-		this.#count[USERS.ID1] = 0
+		for (const t of this.#teams) this.#count[t] = 0
 
 		// 막힌 칸 마킹 (점령 불가, risk/감염 무관)
 		for (const { x, y } of this.#blocked) {
@@ -426,29 +428,30 @@ function gridMoves(grid, userId) {
 	return out
 }
 
-/** 그리드에 수 적용(새 그리드 반환) — CLONE/MOVE + 감염 */
+/** 그리드에 수 적용(새 그리드 반환) — CLONE/MOVE + 감염(모든 인접 타팀, 프리포올) */
 function gridApply(grid, userId, from, to) {
 	const g = cloneGrid(grid)
 	const d = Math.max(Math.abs(to.x - from.x), Math.abs(to.y - from.y))
 	g[to.y][to.x] = userId
 	if (d === 2) g[from.y][from.x] = null // MOVE: 원본 소멸
-	const enemy = rivalOf(userId)
 	for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
 		const ny = to.y + dy, nx = to.x + dx
-		if (g[ny]?.[nx] === enemy) g[ny][nx] = userId // 감염
+		const v = g[ny]?.[nx]
+		if (v != null && v !== BLOCKED && v !== userId) g[ny][nx] = userId // 감염
 	}
 	return g
 }
 
-/** 말수차 = count(me) − count(enemy) */
+/** 말수차 = count(me) − max(count(각 상대)) — 2팀이면 기존과 동일 */
 function gridMaterial(grid, userId) {
-	let me = 0, en = 0
-	const enemy = rivalOf(userId)
+	const counts = {}
 	for (const row of grid) for (const o of row) {
-		if (o === userId) me++
-		else if (o === enemy) en++
+		if (o != null && o !== BLOCKED) counts[o] = (counts[o] ?? 0) + 1
 	}
-	return me - en
+	const me = counts[userId] ?? 0
+	let bestEnemy = 0
+	for (const k in counts) if (k !== userId && counts[k] > bestEnemy) bestEnemy = counts[k]
+	return me - bestEnemy
 }
 //#endregion
 

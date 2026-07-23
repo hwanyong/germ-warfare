@@ -10,10 +10,10 @@ import { isTutorialDone } from '../../storage/progress.mjs'
 import { t, getLang } from '../../i18n/index.mjs'
 
 const CARTO = '/germ-warfare/assets/cartography'
-const ownerTeam = o => (o === USERS.ID0 ? 'p1' : o === USERS.ID1 ? 'p2' : null)
+const ALL_ENGINE_TEAMS = [USERS.ID0, USERS.ID1, 'USER2', 'USER3'] // N:N 프리포올 최대 4팀
+const TEAM_HUE = { p1: 0, p2: 0, p3: 80, p4: 60 } // p3/p4 = 스프라이트 재활용 + 색 변주
 const rowChar = y => String.fromCharCode(65 + y) // A, B, C, ...
 const sleep = ms => new Promise(r => setTimeout(r, ms))
-const other = u => (u === USERS.ID0 ? USERS.ID1 : USERS.ID0)
 
 export function playScene(ctx) {
 	const { stage = 'stage-01', difficulty = 'normal' } = ctx.params
@@ -30,6 +30,13 @@ export function playScene(ctx) {
 	const posToXY = pos => ({ x: +pos.slice(1), y: pos.charCodeAt(0) - 65 })
 	const posStr = p => `${rowChar(p.y)}${p.x}`
 	const blockedSet = new Set((stageData.blocked ?? []).map(b => `${b.x},${b.y}`))
+	// N:N — 스테이지 팀 수 (기본 2). human = 첫 팀(p1), 나머지 전부 AI.
+	const nTeams = stageData.teams ?? 2
+	const ENGINE_TEAMS = ALL_ENGINE_TEAMS.slice(0, nTeams)
+	const VIEW_TEAMS = ENGINE_TEAMS.map((_, i) => `p${i + 1}`)
+	const HUMAN = ENGINE_TEAMS[0]
+	const viewOf = uid => VIEW_TEAMS[ENGINE_TEAMS.indexOf(uid)]
+	const ownerTeam = o => (ENGINE_TEAMS.includes(o) ? viewOf(o) : null)
 	let running = true
 	let paused = false
 	let map
@@ -42,9 +49,10 @@ export function playScene(ctx) {
 		<div class="play-top">
 			<span class="sub">${stageData.name[getLang()] ?? stageData.name.en} · ${difficulty.toUpperCase()}</span>
 			<div class="play-hud">
-				<span class="cell badge" data-owner="p1" style="width:1.1em;height:1.1em;display:inline-block"></span>
-				<span class="num" id="s1">02</span><span class="sub">:</span><span class="num" id="s2">02</span>
-				<span class="cell badge" data-owner="p2" style="width:1.1em;height:1.1em;display:inline-block"></span>
+				${VIEW_TEAMS.map((tm, i) => `
+					${i > 0 ? '<span class="sub">:</span>' : ''}
+					<span class="cell badge" data-owner="${tm}" style="width:1.1em;height:1.1em;display:inline-block;${TEAM_HUE[tm] ? `filter:hue-rotate(${TEAM_HUE[tm]}deg)` : ''}"></span>
+					<span class="num" data-score="${tm}">00</span>`).join('')}
 				<button class="btn" data-act="pause" style="font-size:.8rem;padding:.1em .55em">⏸</button>
 			</div>
 		</div>
@@ -59,8 +67,7 @@ export function playScene(ctx) {
 	`)
 
 	const board = el.querySelector('#board')
-	const s1 = el.querySelector('#s1')
-	const s2 = el.querySelector('#s2')
+	const scoreEls = Object.fromEntries(VIEW_TEAMS.map(tm => [tm, el.querySelector(`[data-score="${tm}"]`)]))
 	const turnEl = el.querySelector('#turn')
 
 	installFx()
@@ -123,9 +130,11 @@ export function playScene(ctx) {
 		if (!owner) { cell?.remove(); return }
 		if (!cell) {
 			cell = document.createElement('div')
-			cell.className = `cell w${Math.floor(Math.random() * WOBBLE_VARIANTS)}`
+			const wob = Math.floor(Math.random() * WOBBLE_VARIANTS)
+			cell.className = `cell w${wob}`
 			cell.style.setProperty('--bd', `${(2.6 + Math.random() * 1.8).toFixed(2)}s`)
 			cell.style.setProperty('--bdelay', `${(Math.random() * -4).toFixed(2)}s`)
+			if (TEAM_HUE[owner]) cell.style.filter = `url(#germ-wobble-${wob}) hue-rotate(${TEAM_HUE[owner]}deg)`
 			t.appendChild(cell)
 		}
 		cell.dataset.owner = owner
@@ -136,14 +145,12 @@ export function playScene(ctx) {
 	}
 	function syncAll() {
 		ROWS.forEach((r, y) => { for (let x = 0; x < W; x++) syncTile(`${r}${x}`) })
-		s1.textContent = String(map.count[USERS.ID0]).padStart(2, '0')
-		s2.textContent = String(map.count[USERS.ID1]).padStart(2, '0')
+		ENGINE_TEAMS.forEach(uid => { scoreEls[viewOf(uid)].textContent = String(map.count[uid]).padStart(2, '0') })
 	}
 	function reset() {
-		map = new GameMap({ seed: 42, grid: stageData.grid, blocked: stageData.blocked })
+		map = new GameMap({ seed: 42, grid: stageData.grid, blocked: stageData.blocked, teams: ENGINE_TEAMS })
 		map.clear()
-		stageData.seeds.p1.forEach(a => map.initField(USERS.ID0, a))
-		stageData.seeds.p2.forEach(a => map.initField(USERS.ID1, a))
+		VIEW_TEAMS.forEach((tm, i) => (stageData.seeds[tm] ?? []).forEach(a => map.initField(ENGINE_TEAMS[i], a)))
 		map.initialized()
 		turns = 0
 		board.querySelectorAll('.cell').forEach(c => c.remove())
@@ -172,7 +179,7 @@ export function playScene(ctx) {
 			markSelectable()
 
 			const showLegal = () => {
-				for (const m of map.legalMovesFrom(USERS.ID0, source)) {
+				for (const m of map.legalMovesFrom(HUMAN, source)) {
 					const lt = tileEl(posStr(m))
 					lt.classList.add('legal')
 					lt.dataset.ownerHint = 'p1'
@@ -245,40 +252,42 @@ export function playScene(ctx) {
 	function finishGame() {
 		running = false
 		clearHints()
-		const own = map.count[USERS.ID0]
-		const enemy = map.count[USERS.ID1]
-		ctx.go('result', { stage, difficulty, result: own > enemy ? 'win' : 'lose', own, enemy, turns })
+		const own = map.count[HUMAN]
+		const enemy = Math.max(...ENGINE_TEAMS.filter(u => u !== HUMAN).map(u => map.count[u]))
+		ctx.go('result', { stage, difficulty, result: map.winner() === HUMAN ? 'win' : 'lose', own, enemy, turns })
 	}
 
 	async function turnLoop() {
-		ships = await mountShips(board)
+		ships = await mountShips(board, VIEW_TEAMS)
 		reset()
 		await sleep(300)
-		let cur = USERS.ID0 // human 선공
+		let idx = 0 // 라운드로빈: human(p1) 선공 → AI 팀들 순서대로
+		let stall = 0 // 연속 패스 수 (전원 무수 감지)
 		while (running) {
 			while (paused && running) await sleep(120)
 			if (!running) return
 			if (map.isTerminal()) return finishGame()
 
-			if (map.legalMoves(cur).length === 0) { // 패스
-				cur = other(cur)
-				if (map.legalMoves(cur).length === 0) return finishGame()
+			const cur = ENGINE_TEAMS[idx % ENGINE_TEAMS.length]
+			idx++
+			if (map.count[cur] === 0 || map.legalMoves(cur).length === 0) { // 전멸/무수 → 패스
+				if (++stall >= ENGINE_TEAMS.length) return finishGame()
 				continue
 			}
+			stall = 0
 
-			turnEl.textContent = cur === USERS.ID0 ? t('play.yourTurn') : t('play.aiTurn')
-			if (cur === USERS.ID0) {
+			turnEl.textContent = cur === HUMAN ? t('play.yourTurn') : t('play.aiTurn')
+			if (cur === HUMAN) {
 				const mv = await humanTurn()
 				if (!running || !mv) return
 				clearHints()
-				await execMove('p1', USERS.ID0, mv.from, mv.to)
+				await execMove(viewOf(cur), cur, mv.from, mv.to)
 			} else {
 				await sleep(450)
-				const mv = pickMove(map, USERS.ID1, difficulty, aiRng)
-				if (mv) await execMove('p2', USERS.ID1, mv.from, mv.to)
+				const mv = pickMove(map, cur, difficulty, aiRng)
+				if (mv) await execMove(viewOf(cur), cur, mv.from, mv.to)
 			}
 			turns++
-			cur = other(cur)
 		}
 	}
 	turnLoop()

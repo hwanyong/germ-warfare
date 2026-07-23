@@ -77,7 +77,7 @@
 - **F1** 씬 흐름(A1)에 **매치 종료 후 광고 슬롯 훅**(interstitial/reward)만 배치. **실제 통합은 나중**:
   광고계정·정책승인·**동의 배너(GDPR)** 필요, 재미 검증 후. (계정 셋업 = 유저 몫)
 
-### PHASE F(구 G) — N:N  [item 1]
+### PHASE F(구 G) — N:N  [item 1]  ✅ 완료 (1인 vs 다수 AI 프리포올)
 - **G0 의도 확정**: N:N = 1인 vs 다수 **AI**(프리포올, 이 데모 잔류) vs 다수 **인간**(→ 별도 멀티앱, ADR-005).
 - **G1**(잔류 시): 엔진 팀 일반화 — `USERS(2)`→`TEAMS[](N)`, `#rival`→others(), count/score/infect/win N팀, 라운드로빈 턴, N 시드.
 

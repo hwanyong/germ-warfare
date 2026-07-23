@@ -70,7 +70,29 @@ export const STAGES = {
 			{ pos: 'G3', asset: 'treeTall' }, { pos: 'G5', asset: 'flag' },
 			{ pos: 'H2', asset: 'palm' }, { pos: 'H6', asset: 'bush' }
 		]
+	},
+	'stage-04': {
+		id: 'stage-04',
+		name: { en: 'Four-Way Chaos', ko: '사파전 대혼전' },
+		grid: { w: 9, h: 9 },
+		blocked: [],
+		teams: 4, // N:N 프리포올 — human(p1) + AI 3팀
+		seeds: {
+			p1: [{ x: 0, y: 0 }, { x: 1, y: 0 }],
+			p2: [{ x: 8, y: 8 }, { x: 7, y: 8 }],
+			p3: [{ x: 8, y: 0 }, { x: 7, y: 0 }],
+			p4: [{ x: 0, y: 8 }, { x: 1, y: 8 }]
+		},
+		parTurns: 40,
+		story: null,
+		village: [
+			{ pos: 'C4', asset: 'castleTall' },
+			{ pos: 'B2', asset: 'house' }, { pos: 'B6', asset: 'church' },
+			{ pos: 'E2', asset: 'mill' }, { pos: 'E6', asset: 'towerWatch' },
+			{ pos: 'F4', asset: 'well' },
+			{ pos: 'G2', asset: 'treePines' }, { pos: 'G6', asset: 'houseViking' }
+		]
 	}
 }
 
-export const STAGE_ORDER = ['stage-01', 'stage-02', 'stage-03']
+export const STAGE_ORDER = ['stage-01', 'stage-02', 'stage-03', 'stage-04']

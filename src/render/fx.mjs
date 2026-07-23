@@ -66,7 +66,7 @@ function spark(layer, team, x, y, px) {
 
 /** 우주선 게임 오브젝트 — 위치·크기·발사구를 스스로 관리. */
 class Ship {
-	constructor(layer, team, homeFrac) {
+	constructor(layer, team, homeFrac, spriteTeam = null, hue = 0) {
 		this.layer = layer
 		this.team = team
 		this.homeFrac = homeFrac // { fx, fy } — board 대비 비율
@@ -77,8 +77,9 @@ class Ship {
 		this.el = el('div', 'ship')
 		this.el.dataset.team = team
 		this.img = el('img')
-		this.img.src = `${BASE}/ship/ship-${team}.png`
+		this.img.src = `${BASE}/ship/ship-${spriteTeam ?? team}.png` // p3/p4 는 p1/p2 스프라이트 재활용
 		this.img.alt = ''
+		if (hue) this.el.style.filter = `hue-rotate(${hue}deg)` // N팀 색 변주
 		this.el.appendChild(this.img)
 		layer.appendChild(this.el)
 
@@ -118,14 +119,23 @@ class Ship {
 	}
 }
 
-/** 팀별 Ship 을 마운트. 이미지 로드까지 대기 후 홈 배치. @returns {{p1:Ship,p2:Ship}} */
-export async function mountShips(board) {
+// 팀별 홈(보드 바깥 코너) + 스프라이트/색 변주 (p3/p4 = p1/p2 재활용 + hue)
+const SHIP_DEF = {
+	p1: { home: { fx: -0.1, fy: 0.02 }, sprite: 'p1', hue: 0 },   // 좌상단 바깥
+	p2: { home: { fx: 1.1, fy: 0.98 }, sprite: 'p2', hue: 0 },    // 우하단 바깥
+	p3: { home: { fx: 1.1, fy: 0.02 }, sprite: 'p1', hue: 80 },   // 우상단 바깥 — 파랑 계열
+	p4: { home: { fx: -0.1, fy: 0.98 }, sprite: 'p2', hue: 60 }   // 좌하단 바깥 — 주황 계열
+}
+
+/** 팀별 Ship 마운트. 이미지 로드까지 대기 후 홈 배치. @returns {{[team]:Ship}} */
+export async function mountShips(board, teams = ['p1', 'p2']) {
 	const layer = board.querySelector('.fx-layer')
-	const ships = {
-		p1: new Ship(layer, 'p1', { fx: -0.1, fy: 0.02 }), // 좌상단 바깥 왼쪽
-		p2: new Ship(layer, 'p2', { fx: 1.1, fy: 0.98 })   // 우하단 바깥 오른쪽
+	const ships = {}
+	for (const tm of teams) {
+		const d = SHIP_DEF[tm]
+		ships[tm] = new Ship(layer, tm, d.home, d.sprite, d.hue)
 	}
-	await Promise.all([ships.p1.ready, ships.p2.ready])
+	await Promise.all(Object.values(ships).map(s => s.ready))
 	for (const s of Object.values(ships)) {
 		const h = s.resolveHome(board)
 		s.place(h.x, h.y)

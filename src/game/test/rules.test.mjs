@@ -198,3 +198,29 @@ test('E blocked 위 AI: gridMoves 가 blocked 타겟 제외 + pickMove 합법', 
 	const mv = pickMove(map, USERS.ID0, 'hard', mulberry32(2))
 	assert.ok(!(mv.to.x === 1 && mv.to.y === 1))
 })
+
+test('G N:N 프리포올: 4팀 감염·count·winner 정합', () => {
+	const T = [USERS.ID0, USERS.ID1, 'USER2', 'USER3']
+	const map = new GameMap({ seed: 9, grid: { w: 9, h: 9 }, teams: T })
+	map.clear()
+	map.initField(T[0], { x: 0, y: 0 })
+	map.initField(T[1], { x: 8, y: 8 })
+	map.initField(T[2], { x: 8, y: 0 })
+	map.initField(T[3], { x: 0, y: 8 })
+	map.initialized()
+	assert.deepEqual(Object.keys(map.count).length, 4)
+	assert.equal(map.isTerminal(), false)
+
+	// T2 옆에 T0 이 붙으면 감염으로 T2 말이 T0 소유가 됨 (프리포올: 타팀 전부 감염)
+	map.applyMove(T[0], { x: 0, y: 0 }, { x: 1, y: 1 })
+	map.applyMove(T[0], { x: 1, y: 1 }, { x: 3, y: 1 }) // MOVE 접근
+	map.applyMove(T[0], { x: 3, y: 1 }, { x: 5, y: 1 })
+	map.applyMove(T[0], { x: 5, y: 1 }, { x: 7, y: 1 }) // (8,0) T2 인접
+	assert.equal(map.fields[0][8], T[0], 'T2 말이 감염됨')
+	assert.equal(map.count[T[2]], 0)
+	// 승자: 최다 칸 = T0
+	assert.equal(map.winner(), T[0])
+	// 4팀에서 AI(그리디 폴백)도 합법수 반환
+	const mv = pickMove(map, T[1], 'hard', mulberry32(4))
+	assert.ok(mv)
+})
