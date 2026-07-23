@@ -86,14 +86,10 @@ germ-warfare/
 
 ## 7. 로드맵
 
-| 단계 | 내용 | 게이트 |
-|---|---|---|
-| **P0** | 메뉴 + 보드 렌더 + human 로컬 플레이 (`src/game` 직결) | 타일 클릭이 실제 보드 갱신 |
-| **P1** | AI 엔진(legalMoves/simulate/eval/negamax) + 턴매니저 + 종료판정 | AI 상대로 한 판 완주 |
-| **P2** | 3난이도 데이터 프로파일 + 스테이지 선택 | Easy/Normal/Hard 체감차 |
-| **P3** | 진행/전적 localStorage (append-only) | 새로고침 후 유지 |
-| later | 맵 다양성 (그리드/막힌칸 파라미터화) | 맵 여러 종 |
-| **앱2** | 멀티 + 상점 = 별도 repo. 이 repo의 game/ai/render 이식 | — |
+작업 순서 SSOT = [`roadmap.md`](roadmap.md). 요약: **A**(씬 뼈대 Title→StageSelect→Play→Result)
+→ **B**(인터랙티브 플레이, crosshair/turn) → **C**(전 에셋 쇼케이스, cartography 배경/파괴) →
+**D**(AI+3난이도) → **E**(스테이지/맵 다양) → **F**(광고 슬롯, 연기) → **G**(N:N, 최후).
+멀티/상점 = 별도 앱(ADR-005).
 
 ## 8. 계보 (이 repo가 온 길)
 

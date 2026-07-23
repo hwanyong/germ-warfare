@@ -1,6 +1,7 @@
 # germ-warfare — 프로젝트 규약
 
 세균전(Ataxx) client-side PvE 웹 게임 데모. 상세는 `docs/architecture.md`, `docs/design.md`, `docs/decisions/`.
+**작업 순서 = `docs/roadmap.md`** (다음 할 일은 여기서 확인).
 
 ## HTML 규약 (필수)
 
