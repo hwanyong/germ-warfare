@@ -263,8 +263,11 @@ export function playScene(ctx) {
 		clearHints()
 		turnEl.textContent = t('play.finishing')
 		const ship = ships[viewOf(filler)]
-		while (running && !map.isTerminal()) {
+		// 주의: isTerminal 을 가드로 쓰면 전멸(생존≤1) 상태에서 한 칸도 못 채움 — 빈칸 기준으로 순회
+		while (running) {
 			while (paused && running) await sleep(120)
+			const empties = map.totalCells - ENGINE_TEAMS.reduce((a, u) => a + map.count[u], 0)
+			if (empties <= 0) break
 			const g = map.fields.map(r => r.slice())
 			const clones = gridMoves(g, filler).filter(m => m.clone)
 			if (!clones.length) break // 도달 불가 지역만 남음 → 그대로 종료

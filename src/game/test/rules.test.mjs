@@ -224,3 +224,21 @@ test('G N:N 프리포올: 4팀 감염·count·winner 정합', () => {
 	const mv = pickMove(map, T[1], 'hard', mulberry32(4))
 	assert.ok(mv)
 })
+
+test('autoFinish 회귀: 전멸(isTerminal=true) 상태에서도 클론 채움 가능해야', () => {
+	// 적 전멸 + 빈칸 다수 보드
+	const map = new GameMap({ seed: 1 })
+	map.clear()
+	map.initField(USERS.ID0, { x: 0, y: 0 })
+	map.initialized() // ID1 없음 = 전멸 상태
+	assert.equal(map.isTerminal(), true) // 생존 ≤ 1 → terminal
+	// 그러나 빈칸이 남아있고 클론 수는 존재 → autoFinish 는 isTerminal 가드가 아니라
+	// 빈칸 가드로 순회해야 함 (가드가 isTerminal 이면 한 칸도 못 채움 — 회귀 방지)
+	const empties = map.totalCells - map.count[USERS.ID0] - map.count[USERS.ID1]
+	assert.ok(empties > 0)
+	const clones = gridMoves(map.fields.map(r => r.slice()), USERS.ID0).filter(m => m.clone)
+	assert.ok(clones.length > 0)
+	// 한 칸 채움 시뮬 — applyMove 정상 동작
+	map.applyMove(USERS.ID0, clones[0].from, clones[0].to)
+	assert.equal(map.count[USERS.ID0], 2)
+})
