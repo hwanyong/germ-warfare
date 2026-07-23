@@ -1,36 +1,36 @@
-// Tutorial 씬(A6) — 별도 3x3 축소 보드 실습.
-// 고정 시나리오(규칙 엔진 재구현 없음 — 시각 시연): ①소스 선택 ②거리1 복제
-// ③거리2 이동 ④감염 ⑤완료. crosshair 로 클릭 타겟 안내, 단계별 입력 게이팅.
-// 완료 시 tutorialDone 저장 → returnTo(플레이) 또는 back.
+// Tutorial 씬(A6) — 3x3 축소 보드. **실제 게임과 동일한 절차**를 가르친다:
+// 매 수 = 소스 세균 선택(클릭→사각 브래킷) → 타겟 칸 클릭(거리1 복제 / 거리2 이동, 감염).
+// 3개 레슨(복제·이동·감염) 각각 select→target 2단계. 단계별 힌트 하이라이트 + 입력 게이팅.
 import { div, onClick } from '../dom.mjs'
 import { WOBBLE_VARIANTS } from '../../render/fx.mjs'
 import { setTutorialDone } from '../../storage/progress.mjs'
 import { t } from '../../i18n/index.mjs'
 
-const A = '/germ-warfare/assets'
 const idx = (x, y) => y * 3 + x
+const xy = i => ({ x: i % 3, y: (i / 3) | 0 })
+const dist = (a, b) => { const A = xy(a), B = xy(b); return Math.max(Math.abs(A.x - B.x), Math.abs(A.y - B.y)) }
 
-// 시나리오: p1=(0,1), p2=(2,0). 복제→이동→감염 순.
-const STEPS = [
-	{ key: 'tutorial.s1', target: idx(0, 1), aim: null },
-	{ key: 'tutorial.s2', target: idx(1, 1), aim: 'aim-clone' },
-	{ key: 'tutorial.s3', target: idx(2, 2), aim: 'aim-move' },
-	{ key: 'tutorial.s4', target: idx(1, 0), aim: 'aim-clone' },
-	{ key: 'tutorial.s5', target: null, aim: null }
+// 시나리오: p1=(0,0), p2=(2,2). 3 레슨 = 복제 → 이동 → 감염.
+const LESSONS = [
+	{ source: idx(0, 0), target: idx(1, 1), selKey: 'tutorial.sel1', actKey: 'tutorial.clone' }, // 복제(거리1)
+	{ source: idx(0, 0), target: idx(2, 0), selKey: 'tutorial.sel2', actKey: 'tutorial.move' },  // 이동(거리2)
+	{ source: idx(1, 1), target: idx(2, 1), selKey: 'tutorial.sel3', actKey: 'tutorial.infect' } // 감염((2,1) 옆 (2,2)=적)
 ]
 
 export function tutorialScene(ctx) {
 	const { returnTo, stage, difficulty } = ctx.params
-	let step = 0
-	// 보드 상태: null | 'p1' | 'p2'
 	const owners = Array(9).fill(null)
-	owners[idx(0, 1)] = 'p1'
-	owners[idx(2, 0)] = 'p2'
+	owners[idx(0, 0)] = 'p1'
+	owners[idx(2, 2)] = 'p2'
+
+	let lesson = 0
+	let phase = 'select' // 'select' | 'target'
+	let selected = null
 
 	const el = div('scene', `
 		<button class="btn back-btn" data-act="skip">← ${t('tutorial.skip')}</button>
 		<div class="logo" style="font-size:2rem">${t('tutorial.title')}</div>
-		<div class="card" style="min-width:16em"><div id="tut-msg"></div></div>
+		<div class="card" style="min-width:17em"><div id="tut-msg"></div></div>
 		<div class="board" id="mini" style="width:min(60vmin,300px);grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)">
 			${Array.from({ length: 9 }, (_, i) => `<div class="tile frame-thin" data-i="${i}"></div>`).join('')}
 		</div>
@@ -43,54 +43,88 @@ export function tutorialScene(ctx) {
 	const tiles = [...mini.querySelectorAll('.tile')]
 
 	function renderCells() {
-		tiles.forEach((t, i) => {
-			let cell = t.querySelector('.cell')
+		tiles.forEach((tile, i) => {
+			let cell = tile.querySelector('.cell')
 			if (!owners[i]) { cell?.remove(); return }
 			if (!cell) {
 				cell = document.createElement('div')
 				cell.className = `cell w${Math.floor(Math.random() * WOBBLE_VARIANTS)}`
 				cell.style.setProperty('--bdelay', `${(Math.random() * -3).toFixed(2)}s`)
-				t.appendChild(cell)
+				tile.appendChild(cell)
 			}
 			cell.dataset.owner = owners[i]
 		})
 	}
+	function clearMarks() {
+		tiles.forEach(tl => tl.classList.remove('selected', 'hint'))
+	}
+	// 현재 단계에서 클릭해야 할 칸 하이라이트 + 소스 선택 표시
 	function renderStep() {
-		const s = STEPS[step]
-		msgEl.textContent = t(s.key)
-		// crosshair 안내: 타겟 칸에 aim 이미지 표시
-		tiles.forEach(t => t.querySelector('.tut-aim')?.remove())
-		if (s.target != null && s.aim) {
-			const img = document.createElement('img')
-			img.className = 'tut-aim'
-			img.src = `${A}/crosshair/${s.aim}.png`
-			img.style.cssText = 'position:absolute;inset:12%;width:76%;height:76%;pointer-events:none;'
-			tiles[s.target].appendChild(img)
+		clearMarks()
+		if (lesson >= LESSONS.length) {
+			msgEl.textContent = t('tutorial.fin')
+			doneBtn.style.visibility = 'visible'
+			return
 		}
-		if (s.target == null) doneBtn.style.visibility = 'visible'
+		const L = LESSONS[lesson]
+		if (phase === 'select') {
+			msgEl.textContent = t(L.selKey)
+			tiles[L.source].classList.add('hint')
+		} else {
+			msgEl.textContent = t(L.actKey)
+			tiles[selected].classList.add('selected')
+			tiles[L.target].classList.add('hint')
+		}
 	}
 
 	function pop(i) {
 		tiles[i].querySelector('.cell')?.animate(
-			[{ transform: 'scale(0)' }, { transform: 'scale(1.18)', offset: 0.7 }, { transform: 'scale(1)' }],
+			[{ transform: 'scale(0)' }, { transform: 'scale(1.18)', offset: .7 }, { transform: 'scale(1)' }],
 			{ duration: 320, easing: 'cubic-bezier(.3,1.3,.5,1)' }
 		)
 	}
+	function flip(i) {
+		tiles[i].querySelector('.cell')?.animate(
+			[{ transform: 'scale(1) rotate(0)' }, { transform: 'scale(1.3) rotate(180deg)', offset: .5 }, { transform: 'scale(1) rotate(360deg)' }],
+			{ duration: 380, easing: 'ease-out' }
+		)
+	}
+	function infect(center) {
+		const c = xy(center)
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+			if (!dx && !dy) continue
+			const nx = c.x + dx, ny = c.y + dy
+			if (nx < 0 || nx > 2 || ny < 0 || ny > 2) continue
+			const ni = idx(nx, ny)
+			if (owners[ni] === 'p2') { owners[ni] = 'p1'; renderCells(); flip(ni) }
+		}
+	}
 
 	mini.addEventListener('click', e => {
-		const t = e.target.closest('.tile')
-		if (!t) return
-		const i = +t.dataset.i
-		const s = STEPS[step]
-		if (s.target !== i) return // 단계 입력 게이팅
+		const tile = e.target.closest('.tile')
+		if (!tile || lesson >= LESSONS.length) return
+		const i = +tile.dataset.i
+		const L = LESSONS[lesson]
 
-		if (step === 0) { /* 소스 선택 — 하이라이트만 */ }
-		else if (step === 1) { owners[i] = 'p1'; pop(i) }                     // 복제
-		else if (step === 2) { owners[idx(1, 1)] = null; owners[i] = 'p1'; pop(i) } // 이동(원본 소멸)
-		else if (step === 3) { owners[i] = 'p1'; owners[idx(2, 0)] = 'p1'; pop(i); pop(idx(2, 0)) } // 감염
-		renderCells()
-		step++
-		renderStep()
+		if (phase === 'select') {
+			if (i !== L.source || owners[i] !== 'p1') return // 게이팅: 지정 세균만
+			selected = i
+			phase = 'target'
+			renderStep()
+		} else {
+			if (i !== L.target) return // 게이팅: 지정 타겟만
+			const d = dist(selected, i)
+			owners[i] = 'p1'          // 복제/이동 공통: 타겟 생성
+			if (d === 2) owners[selected] = null // 이동: 원본 소멸
+			renderCells()
+			pop(i)
+			infect(i)                 // 감염
+			// 다음 레슨
+			selected = null
+			phase = 'select'
+			lesson++
+			renderStep()
+		}
 	})
 
 	function finish() {

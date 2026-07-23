@@ -115,6 +115,16 @@
 /* 합법 타겟 = 포인터 커서 */
 .tile.legal { cursor: url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer; }
 
+/* 튜토리얼 힌트: 클릭할 칸 강조 */
+.tile.hint {
+	cursor: url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer;
+	animation: hint-pulse 1s ease-in-out infinite;
+}
+@keyframes hint-pulse {
+	0%, 100% { box-shadow: 0 0 0 0 transparent; }
+	50%      { box-shadow: 0 0 .5em .1em var(--p1); }
+}
+
 /* 호버 미리보기 오버레이 (cell_small 고스트 + crosshair + 복제/이동 뱃지) */
 .tile .preview {
 	position: absolute;

@@ -15,11 +15,13 @@ const DICT = {
 		'settings.title': 'Settings', 'settings.sound': 'Sound', 'settings.motion': 'Reduce Motion', 'settings.difficulty': 'Default Difficulty',
 		'settings.language': 'Language', 'settings.tutorialAgain': 'Tutorial Again', 'settings.credits': 'Credits', 'settings.back': 'Back', 'settings.coming': 'soon',
 		'tutorial.title': 'Tutorial', 'tutorial.skip': 'Skip', 'tutorial.done': 'Done',
-		'tutorial.s1': '① Click your germ (green)',
-		'tutorial.s2': '② Adjacent empty cell = Clone (source stays)',
-		'tutorial.s3': '③ Cell 2 away = Move (source removed)',
-		'tutorial.s4': '④ Next to an enemy → infect! Try it',
-		'tutorial.s5': '⑤ Done! Most cells wins',
+		'tutorial.sel1': '① Select your germ (green)',
+		'tutorial.clone': '② Now click the adjacent empty cell = Clone (source stays)',
+		'tutorial.sel2': '③ Select a germ again',
+		'tutorial.move': '④ Click the cell 2 away = Move (source removed)',
+		'tutorial.sel3': '⑤ Select a germ',
+		'tutorial.infect': '⑥ Place next to the enemy (pink) → infect!',
+		'tutorial.fin': '✓ Done! The side with more cells wins.',
 		'credits.made': 'Design · Direction · Code', 'credits.art': 'Art', 'credits.paper': 'Paper', 'credits.fonts': 'Fonts', 'credits.back': 'Back'
 	},
 	ko: {
@@ -35,11 +37,13 @@ const DICT = {
 		'settings.title': '설정', 'settings.sound': '사운드', 'settings.motion': '모션 감소', 'settings.difficulty': '기본 난이도',
 		'settings.language': '언어', 'settings.tutorialAgain': '튜토리얼 다시', 'settings.credits': '크레딧', 'settings.back': '뒤로', 'settings.coming': '준비중',
 		'tutorial.title': '튜토리얼', 'tutorial.skip': '스킵', 'tutorial.done': '완료',
-		'tutorial.s1': '① 내 세균(초록)을 클릭!',
-		'tutorial.s2': '② 바로 옆 빈칸 클릭 = 복제 (원본 유지)',
-		'tutorial.s3': '③ 두 칸 떨어진 빈칸 클릭 = 이동 (원본 소멸)',
-		'tutorial.s4': '④ 적(핑크) 옆에 두면 감염! 클릭해 보자',
-		'tutorial.s5': '⑤ 완료! 칸이 더 많은 쪽이 승리한다',
+		'tutorial.sel1': '① 내 세균(초록)을 선택하세요',
+		'tutorial.clone': '② 이제 바로 옆 빈칸을 클릭 = 복제 (원본 유지)',
+		'tutorial.sel2': '③ 세균을 다시 선택하세요',
+		'tutorial.move': '④ 두 칸 떨어진 칸을 클릭 = 이동 (원본 소멸)',
+		'tutorial.sel3': '⑤ 세균을 선택하세요',
+		'tutorial.infect': '⑥ 적(핑크) 옆에 놓으면 감염!',
+		'tutorial.fin': '✓ 완료! 칸이 더 많은 쪽이 승리합니다.',
 		'credits.made': '기획 · 연출 · 코드', 'credits.art': '아트', 'credits.paper': '종이', 'credits.fonts': '폰트', 'credits.back': '뒤로'
 	}
 }
