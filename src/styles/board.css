@@ -60,6 +60,19 @@
 	height: 100%;
 }
 
+/* 막힌 칸 (바위) — 프레임 없음(투명), 배경 채움, 바위 뚜렷 */
+.tile.blocked {
+	border-image: none;
+	border: 0;
+	background: #d9d5c9; /* 종이보다 짙은 흙/돌 톤 */
+	border-radius: .25em;
+	box-shadow: inset 0 0 .4em #00000018;
+	cursor: url(/germ-warfare/assets/cursor/pointer3D.png) 2 2, default;
+}
+.tile.blocked > .bld.rock {
+	opacity: .85; /* 마을(0.32)보다 뚜렷 — 지형지물 */
+}
+
 /* 배경 마을 건물 (cartography) — 셀 뒤, 흐릿하게 */
 .tile > .bld {
 	position: absolute;
