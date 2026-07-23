@@ -6,8 +6,8 @@ import './styles/theme.css'
 import './styles/board.css'
 import './styles/fx.css'
 import './styles/scene.css'
-import { PRELOAD_IMAGES } from './loading/assets.mjs'
-import { preloadAll } from './loading/preload.mjs'
+import { CRITICAL_IMAGES, DEFERRED_IMAGES } from './loading/assets.mjs'
+import { preloadAll, preloadInBackground } from './loading/preload.mjs'
 import { createManager } from './scene/index.mjs'
 
 async function boot() {
@@ -15,7 +15,8 @@ async function boot() {
 	const fillEl = document.getElementById('load-fill')
 	const loadingEl = document.getElementById('loading')
 
-	await preloadAll(PRELOAD_IMAGES, (done, total) => {
+	// 1) 크리티컬(커서·버튼·배경·폰트)만 게이트 → 빠른 시작
+	await preloadAll(CRITICAL_IMAGES, (done, total) => {
 		const p = Math.round((done / total) * 100)
 		if (pctEl) pctEl.textContent = `${p}%`
 		if (fillEl) fillEl.style.width = `${p}%`
@@ -26,6 +27,9 @@ async function boot() {
 
 	loadingEl?.classList.add('done')
 	setTimeout(() => loadingEl?.remove(), 350)
+
+	// 2) 나머지 게임 자산은 백그라운드로 (메뉴 보는 동안 로드)
+	preloadInBackground(DEFERRED_IMAGES)
 }
 
 boot()

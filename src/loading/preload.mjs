@@ -10,7 +10,7 @@ export function preloadImage(url) {
 }
 
 /**
- * 모든 이미지 + 폰트 프리로드.
+ * 이미지 + 폰트 프리로드 (진행률 게이트용).
  * @param {string[]} images
  * @param {(done:number, total:number)=>void} [onProgress]
  */
@@ -23,4 +23,9 @@ export async function preloadAll(images, onProgress) {
 	const fontJob = (document.fonts?.ready ?? Promise.resolve()).then(tick)
 
 	await Promise.all([...imageJobs, fontJob])
+}
+
+/** 백그라운드 프리로드 (fire-and-forget, 게임 시작 후 나머지 자산). */
+export function preloadInBackground(images) {
+	for (const u of images) preloadImage(u)
 }
