@@ -29,11 +29,28 @@
 ## 작업 순서 (재구성)
 
 ### PHASE A — 씬 뼈대 + 엔진 갭  [3-1]
-- **A1 씬 매니저**: Scene 추상 + 레지스트리. 씬 = **Title → StageSelect → Play → Result → Settings**.
-  흐름: `[시작화면]→(시작)→[스테이지선택]→(선택)→[플레이]→(종료판정)→[결과]→(재대결/스테이지선택/메뉴)`.
+
+**씬 셋**: Title · StageSelect · Play(+Pause) · Result(승/패 분기) · Settings · **Tutorial** · **Credits/Legal**. (Intro/Story = 추후 훅만)
+
+흐름:
+```
+[Loading]→[Title]─┬시작→[StageSelect]─선택→[Play]─종료판정→[Result 승|패]
+                  ├설정→[Settings]              │일시정지→[Pause](재개/설정/포기)
+                  ├튜토→[Tutorial]              └(첫플레이=Tutorial 자동)
+                  └크레딧→[Credits/Legal]
+  Result 이탈방지: 승=[재대결][난이도↑][스테이지선택] / 패=[다시도전(대형)][난이도↓][스테이지선택]
+  (Result→복귀 사이 = 광고 슬롯 훅 F, 자리만)
+```
+
+- **A1 씬 매니저**: Scene 추상 + 레지스트리 + 전환. 위 씬 전부. Result 승/패 옵션 분기(락인). Settings는 Title·Pause 양쪽.
 - **A2 엔진 E1(legalMoves) + E2(terminal+winner)** — Play 검증 + Result 전제.
-- **A3 Stage 데이터 최소형**: 스테이지를 **데이터로**(grid 7×7 + 코너 시드) 1개 정의. 하드코딩 금지 → item 2로 확장 가능.
-  - 참고: **StageSelect는 지금 1개 스테이지만** 표시(추후 다수).
+- **A3 Stage 데이터 최소형**: 스테이지를 **데이터로**(grid 7×7 + 코너 시드 + `parTurns`) 1개 정의. 하드코딩 금지. **StageSelect는 현재 1개**만 표시.
+- **A4 난이도**: StageSelect에서 **매판 Easy/Normal/Hard 선택**. (실제 AI 난이도 로직은 PHASE D)
+- **A5 진행저장(progress store, localStorage)**: **스테이지 × 난이도별 최고점**. `{ [stageId]: { easy|normal|hard: { best, wins, plays } } }`. **승리 시에만 기록**. StageSelect가 난이도별 best 표시(리텐션).
+  - **점수 공식**(승리 시): `score = round( (own*10 + margin*8) * elimMult + fastBonus )`
+    - `margin = own − enemy`, `elimMult = (enemy==0 ? 2.0 : 1.0)` (전멸 배수), `fastBonus = max(0, parTurns − turns) * 12` (속공 가산). 상수는 config로 튜닝.
+- **A6 Tutorial**: **별도 축소 보드**. 첫 플레이 자동(`tutorialDone` 플래그) + Title/Settings 재실행. 단계=①소스선택 ②거리1 복제 ③거리2 이동 ④감염 ⑤승리조건, crosshair 안내 + 단계 입력게이팅.
+- **A7 Credits/Legal(필수)**: 앱 내 씬 + `docs/LICENSES.md`. 소유 **© 2026 Hwanyong Yoo (UHD)** + 에셋 출처(Kenney CC0)/폰트(OFL). Title·Settings에서 접근.
 
 ### PHASE B — 인터랙티브 플레이  [3-2 / 3a]
 - **B1 Play 보드**: 타일/세균 렌더(기존) + 클릭 소스 선택 + hover 합법타겟 → **crosshair 2종**
