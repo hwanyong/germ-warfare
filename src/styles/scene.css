@@ -70,7 +70,14 @@
 
 .back-btn { position: fixed; left: .8em; top: .8em; z-index: 10; }
 
-/* 스테이지 카드 선택 (PHASE E) */
-.stage-card { transition: transform .1s ease; }
+/* 스테이지 선택 (캠페인 챕터 그리드) */
+.stage-select-scene { justify-content: flex-start; }
+.stage-list { display: flex; flex-direction: column; gap: 1em; width: min(94vw, 46em); }
+.chapter-head { font-family: var(--font-title); font-size: 1.15rem; text-align: left; opacity: .75; margin-bottom: .35em; }
+.stage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr)); gap: .55em; }
+.stage-card { transition: transform .1s ease; padding: .55em .5em .45em; gap: .18em; font-size: .82rem; }
+.stage-card .stage-num { font-family: var(--font-title); }
 .stage-card:hover { transform: scale(1.02); }
 .stage-card[aria-selected="true"] { background: var(--p1-soft); }
+.stage-card.locked { opacity: .45; }
+.stage-card.locked:hover { transform: none; }

@@ -4,7 +4,7 @@
 import { div, onClick } from '../dom.mjs'
 import { GameMap, USERS, BLOCKED, STATE, mulberry32 } from '../../game/index.mjs'
 import { installFx, mountShips, playMove, playJump, WOBBLE_VARIANTS } from '../../render/fx.mjs'
-import { pickMove } from '../../game/ai.mjs'
+import { pickMove, effectiveDifficulty } from '../../game/ai.mjs'
 import { STAGES } from '../../data/stages.mjs'
 import { isTutorialDone } from '../../storage/progress.mjs'
 import { t, getLang } from '../../i18n/index.mjs'
@@ -25,6 +25,8 @@ export function playScene(ctx) {
 	}
 
 	const stageData = STAGES[stage]
+	// 실제 AI 레벨 = 스테이지 기본(ai) ± 유저 노브 시프트 (진행 커브는 데이터가 결정)
+	const aiLevel = effectiveDifficulty(stageData.ai, difficulty)
 	const { w: W, h: H } = stageData.grid
 	const ROWS = Array.from({ length: H }, (_, y) => rowChar(y))
 	const posToXY = pos => ({ x: +pos.slice(1), y: pos.charCodeAt(0) - 65 })
@@ -47,7 +49,7 @@ export function playScene(ctx) {
 
 	const el = div('scene', `
 		<div class="play-top">
-			<span class="sub">${stageData.name[getLang()] ?? stageData.name.en} · ${difficulty.toUpperCase()}</span>
+			<span class="sub">${stageData.name[getLang()] ?? stageData.name.en} · ${difficulty.toUpperCase()}${aiLevel !== difficulty ? ` · AI ${aiLevel.toUpperCase()}` : ''}</span>
 			<div class="play-hud">
 				${VIEW_TEAMS.map((tm, i) => `
 					${i > 0 ? '<span class="sub">:</span>' : ''}
@@ -284,7 +286,7 @@ export function playScene(ctx) {
 				await execMove(viewOf(cur), cur, mv.from, mv.to)
 			} else {
 				await sleep(450)
-				const mv = pickMove(map, cur, difficulty, aiRng)
+				const mv = pickMove(map, cur, aiLevel, aiRng)
 				if (mv) await execMove(viewOf(cur), cur, mv.from, mv.to)
 			}
 			turns++

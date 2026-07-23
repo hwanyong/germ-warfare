@@ -72,6 +72,10 @@
 - **E1 Stage 스키마 확장**: grid 크기/형태, blocked 칸, N 시드, 배경 배치, objective, story 인트로.
 - **E2 map.mjs 그리드 완전 파라미터화**(dims+blocked). (관련필드=체비쇼프라 직사각 자연 일반화)
 - **E3 다수 스테이지 + 진행저장**(localStorage append-only, ADR-006) + StageSelect 확장. 맵 변주/스토리 훅.
+- **E4 캠페인 재구성** ✅: 20 스테이지 = 4챕터×5(초원2팀→협곡2팀+핸디캡→숲3팀→화산4팀). `src/data/stages.mjs`
+  스펙+빌더 양산(지형 패턴·시드 핸디캡·마을 자동배치=시드 PRNG). 스테이지별 `ai` 기본레벨 + 유저 노브 ±1
+  시프트(`effectiveDifficulty`). 직전 승리 시 해금(`hasWin`). stage-01 = 기본형 유지. 검증 = `stages.test.mjs`
+  (커브 단조성·도달성·엔진 기동).
 
 ### PHASE G(구 F) — 광고 슬롯  [3-3, 최후·대기]
 - **F1** 씬 흐름(A1)에 **매치 종료 후 광고 슬롯 훅**(interstitial/reward)만 배치. **실제 통합은 나중**:

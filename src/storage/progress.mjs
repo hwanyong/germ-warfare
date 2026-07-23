@@ -42,6 +42,12 @@ export function recordPlay(stageId, difficulty, { win, score = 0 }) {
 	return { best: rec.best, newBest }
 }
 
+/** 해당 스테이지를 (아무 난이도로든) 승리한 적 있는가 — 다음 스테이지 해금 판정 */
+export function hasWin(stageId) {
+	const s = load()[stageId]
+	return !!s && Object.values(s).some(r => r.wins > 0)
+}
+
 // 튜토리얼 완료 플래그 (A6)
 const TUT_KEY = 'gw-tutorial-done'
 export const isTutorialDone = () => localStorage.getItem(TUT_KEY) === '1'

@@ -14,6 +14,21 @@ export const DIFFICULTY = {
 	hard: { noise: 0, blunder: 0, depth: 3 }
 }
 
+const LEVELS = ['easy', 'normal', 'hard']
+const KNOB_SHIFT = { easy: -1, normal: 0, hard: 1 }
+
+/**
+ * 실제 적용 AI 레벨 = 스테이지 기본레벨(stage.ai) ± 유저 난이도 노브 시프트.
+ * 스테이지 진행 커브(데이터)와 유저 선택(노브)을 분리 — 노브는 상대 보정만.
+ * @param {'easy'|'normal'|'hard'} [stageAi] 스테이지 기본 (없으면 normal)
+ * @param {'easy'|'normal'|'hard'} [knob] 유저 선택 (easy=-1, normal=0, hard=+1)
+ */
+export function effectiveDifficulty(stageAi = 'normal', knob = 'normal') {
+	const base = LEVELS.indexOf(stageAi)
+	const i = (base < 0 ? 1 : base) + (KNOB_SHIFT[knob] ?? 0)
+	return LEVELS[Math.max(0, Math.min(LEVELS.length - 1, i))]
+}
+
 // 즉시 감염 수 (그리드 기준, 프리포올 = 모든 인접 타팀)
 function flipsAt(grid, userId, to) {
 	let n = 0
