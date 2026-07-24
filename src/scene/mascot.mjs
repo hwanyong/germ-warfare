@@ -5,7 +5,7 @@
 const BASE = '/germ-warfare/assets/mascot'
 const SPRITE = { p1: 'germ-green', p2: 'germ-pink', p3: 'germ-green', p4: 'germ-pink' } // p3/p4 = 재활용(+씬 hue)
 
-/** 마스코트 webp 경로. variant: '' | 'left' | 'fast' (docs/assets.md §mascot) */
+/** 마스코트 webp 경로. variant: '' | 'right'(우향 걷기) | 'fast' (docs/assets.md §mascot) */
 export const mascotSrc = (team, variant = '') =>
 	`${BASE}/${SPRITE[team] ?? SPRITE.p1}${variant ? `-${variant}` : ''}.webp`
 

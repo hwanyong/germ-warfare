@@ -135,21 +135,21 @@
 	0%, 100% { transform: translateY(0) rotate(-2deg); }
 	50%      { transform: translateY(-.5em) rotate(2deg); }
 }
-/* 걷는 마스코트 — 화면 하단 횡단. -left 스프라이트 = 좌향 걷기, p2 는 반전해 우향 */
+/* 걷는 마스코트 — 화면 하단 횡단. -right 스프라이트 = 우향 걷기, p2 는 반전해 좌향 */
 .t-walk { height: 3em; left: 0; bottom: max(1em, env(safe-area-inset-bottom)); }
-.t-walk-p1 { animation: t-walk-l 26s linear infinite; }
+.t-walk-p1 { animation: t-walk-r 26s linear infinite; }
 .t-walk-p2 {
 	height: 2.6em;
 	bottom: calc(max(1em, env(safe-area-inset-bottom)) + 3.6em);
-	animation: t-walk-r 34s linear infinite;
-}
-@keyframes t-walk-l {
-	from { transform: translateX(100vw); }
-	to   { transform: translateX(-5em); }
+	animation: t-walk-l 34s linear infinite;
 }
 @keyframes t-walk-r {
-	from { transform: translateX(-5em) scaleX(-1); }
-	to   { transform: translateX(100vw) scaleX(-1); }
+	from { transform: translateX(-5em); }
+	to   { transform: translateX(100vw); }
+}
+@keyframes t-walk-l {
+	from { transform: translateX(100vw) scaleX(-1); }
+	to   { transform: translateX(-5em) scaleX(-1); }
 }
 .title-scene .logo { animation: logo-breathe 3.6s ease-in-out infinite; }
 @keyframes logo-breathe {
@@ -158,8 +158,8 @@
 }
 @media (prefers-reduced-motion: reduce) {
 	.title-scene .logo, .t-ship, .t-walk { animation: none; }
-	.t-walk-p1 { transform: translateX(18vw); }
-	.t-walk-p2 { transform: translateX(70vw) scaleX(-1); }
+	.t-walk-p1 { transform: translateX(18vw); }         /* 우향 원본 */
+	.t-walk-p2 { transform: translateX(70vw) scaleX(-1); } /* 반전 = 좌향 */
 }
 
 /* 스테이지 선택 (캠페인 챕터 그리드) */

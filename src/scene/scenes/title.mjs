@@ -10,8 +10,8 @@ export function titleScene(ctx) {
 		<div class="title-deco" aria-hidden="true">
 			<img class="t-ship t-ship-p1" src="${A}/ship/ship-p1.png" alt="">
 			<img class="t-ship t-ship-p2" src="${A}/ship/ship-p2.png" alt="">
-			<img class="t-walk t-walk-p1" src="${mascotSrc('p1', 'left')}" alt="">
-			<img class="t-walk t-walk-p2" src="${mascotSrc('p2', 'left')}" alt="">
+			<img class="t-walk t-walk-p1" src="${mascotSrc('p1', 'right')}" alt="">
+			<img class="t-walk t-walk-p2" src="${mascotSrc('p2', 'right')}" alt="">
 		</div>
 		<div class="logo">세균전</div>
 		<div class="sub">GERM WARFARE</div>
