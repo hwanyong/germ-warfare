@@ -51,14 +51,19 @@ export function stageSelectScene(ctx) {
 				<div class="stage-grid">${ch.stages.map(card).join('')}</div>
 			</div>`).join('')}
 		</div>
-		<div class="btn-row" id="diffs">
-			${DIFFS.map(d => `<button class="btn" data-diff="${d}"${d === difficulty ? ' aria-selected="true"' : ''}>${LABEL[d]}</button>`).join('')}
-		</div>
-		<div class="btn-row">
-			<button class="btn primary" data-act="play">${t('stage.start')}</button>
-			<button class="btn" data-act="back">${t('stage.back')}</button>
+		<div class="stage-actions">
+			<div class="btn-row" id="diffs">
+				${DIFFS.map(d => `<button class="btn" data-diff="${d}"${d === difficulty ? ' aria-selected="true"' : ''}>${LABEL[d]}</button>`).join('')}
+			</div>
+			<div class="btn-row">
+				<button class="btn primary" data-act="play">${t('stage.start')}</button>
+				<button class="btn" data-act="back">${t('stage.back')}</button>
+			</div>
 		</div>
 	`)
+
+	// 진행 중(선택된) 스테이지가 첫 화면에 보이게 — 긴 목록에서 스크롤 미아 방지
+	queueMicrotask(() => el.querySelector('.stage-card[aria-selected="true"]')?.scrollIntoView({ block: 'center' }))
 
 	const refreshBest = () => {
 		for (const id of STAGE_ORDER) {

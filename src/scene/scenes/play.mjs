@@ -68,11 +68,11 @@ export function playScene(ctx) {
 					${i > 0 ? '<span class="sub">:</span>' : ''}
 					<span class="cell badge" data-owner="${tm}" style="width:1.1em;height:1.1em;display:inline-block;${TEAM_HUE[tm] ? `filter:hue-rotate(${TEAM_HUE[tm]}deg)` : ''}"></span>
 					<span class="num" data-score="${tm}">00</span>`).join('')}
-				<button class="btn" data-act="pause" style="font-size:.8rem;padding:.1em .55em">⏸</button>
+				<button class="btn" data-act="pause" style="font-size:1rem;padding:.1em .5em">⏸</button>
 			</div>
 		</div>
 		<div class="turn-label" id="turn"></div>
-		<div class="board" id="board" style="grid-template-columns:repeat(${W},1fr);grid-template-rows:repeat(${H},1fr);aspect-ratio:${W}/${H}">
+		<div class="board" id="board" style="grid-template-columns:repeat(${W},1fr);grid-template-rows:repeat(${H},1fr);aspect-ratio:${W}/${H};--ar:${(W / H).toFixed(4)}">
 			${ROWS.map((r, y) => Array.from({ length: W }, (_, x) =>
 				blockedSet.has(`${x},${y}`)
 					? `<div class="tile frame-thin blocked" data-pos="${r}${x}"><img class="bld rock" src="${CARTO}/rocks.png" alt="" /></div>`

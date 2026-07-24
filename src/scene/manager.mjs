@@ -47,6 +47,7 @@ export class SceneManager {
 		}
 		this.#current = this.#scenes[name](ctx)
 		this.#root.appendChild(this.#current.el)
+		window.scrollTo(0, 0) // 이전 씬의 스크롤 위치 누수 방지 (긴 씬 → 짧은 씬 전환)
 		this.#onEnter?.(name, params)
 	}
 

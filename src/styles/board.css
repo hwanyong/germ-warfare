@@ -1,38 +1,10 @@
 /* 보드 레이아웃 — 솔로 PvE, 반응형 (기존 3열 Twitch 오버레이 → 보드 중심 단일열).
  * P0의 src/render 가 이 레이아웃 위에 상호작용을 얹는다. */
 
-.smoke,
-.screen {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 0.8em;
-
-	min-height: 100vh;
-	padding: 1em;
-	text-align: center;
-}
-
-.scoreline {
-	display: flex;
-	align-items: center;
-	gap: 0.4em;
-	font-size: 1.6em;
-}
-.scoreline .num {
-	min-width: 1.6em;
-}
-.scoreline .badge {
-	width: 1.3em;
-	height: 1.3em;
-	display: inline-block;
-}
-.scoreline .vs {
-	opacity: 0.5;
-}
-
-/* 7×7 보드 — 화면에 맞춰 정사각 */
+/* W×H 보드 — 화면에 맞춰 그리드 비율 유지.
+ * 폭 상한 3중: ① 가로(씬 패딩 --px 제외) ② 절대 560px ③ 세로 잔여높이 × 비율(--ar = W/H).
+ * ③ 이 가로모드 보드 잘림의 근본 해결 — HUD·턴라벨·여백 몫(--board-chrome)을 뺀 높이에 맞춤.
+ * --ar 은 play 씬이 스테이지 그리드에 맞춰 inline 주입(기본 1). */
 .board {
 	position: relative; /* fx-layer(우주선/레이저) 오버레이 기준 */
 
@@ -41,8 +13,23 @@
 	grid-template-rows: repeat(7, 1fr);
 	gap: 0.35em;
 
-	width: min(92vmin, 560px);
+	--board-chrome: 9em;
+	width: min(calc(100vw - 2 * var(--px, 1.2em)), 560px, calc((100vh - var(--board-chrome)) * var(--ar, 1)));
+	width: min(calc(100vw - 2 * var(--px, 1.2em)), 560px, calc((100dvh - var(--board-chrome)) * var(--ar, 1)));
 	aspect-ratio: 1;
+}
+
+/* 초협폭: 칸 사이 간격 축소 → 타일 탭타깃 확보 (10×10 스테이지 대응) */
+@media (max-width: 430px) {
+	.board { gap: 0.22em; }
+}
+
+/* 좁은 화면(≤700px: 보드가 화면폭 대부분 차지 → 우주선이 보드 위/아래로 파킹됨):
+ * 턴라벨-보드 간격을 벌려 파킹된 우주선이 라벨 글자를 가리지 않게 한다.
+ * 라벨 마진만큼 보드 세로 몫(--board-chrome)도 함께 보정. */
+@media (max-width: 700px) {
+	.turn-label { margin-bottom: 2.4em; }
+	.board { --board-chrome: 12em; }
 }
 
 .tile {

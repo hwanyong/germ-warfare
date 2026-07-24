@@ -34,7 +34,7 @@ export function resultScene(ctx) {
 
 	const winnerTeam = own > enemy ? 'p1' : 'p2'
 	const el = div('scene', `
-		<div class="cell badge" data-owner="${winnerTeam}" style="width:3.5em;height:3.5em"></div>
+		<div class="cell result-badge" data-owner="${winnerTeam}"></div>
 		<div class="result-head ${win ? 'win' : 'lose'}">${win ? t('result.win') : t('result.lose')}</div>
 		<div class="card">
 			<div>${t('result.you')} <span class="num">${own}</span> : <span class="num">${enemy}</span> ${t('result.enemy')} <span class="sub">(${turns} ${t('result.turns')})</span></div>

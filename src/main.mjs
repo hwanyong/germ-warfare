@@ -39,7 +39,6 @@ async function boot() {
 			syncBgm()
 		}
 	})
-	window.__gw = manager // TEMP: 반응형 조사용 씬 점프 훅 — 조사 종료 시 제거
 	manager.go('title')
 
 	loadingEl?.classList.add('done')

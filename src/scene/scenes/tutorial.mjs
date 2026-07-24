@@ -31,7 +31,7 @@ export function tutorialScene(ctx) {
 		<button class="btn back-btn" data-act="skip">← ${t('tutorial.skip')}</button>
 		<div class="logo" style="font-size:2rem">${t('tutorial.title')}</div>
 		<div class="card" style="min-width:17em"><div id="tut-msg"></div></div>
-		<div class="board" id="mini" style="width:min(60vmin,300px);grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)">
+		<div class="board" id="mini" style="width:min(60vmin,300px,max(150px,calc(100dvh - 13em)));grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)">
 			${Array.from({ length: 9 }, (_, i) => `<div class="tile frame-thin" data-i="${i}"></div>`).join('')}
 		</div>
 		<button class="btn primary" data-act="done" style="visibility:hidden">${t('tutorial.done')}</button>

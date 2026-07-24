@@ -119,7 +119,21 @@ class Ship {
 	}
 
 	resolveHome(board) {
-		this.home = { x: board.clientWidth * this.homeFrac.fx, y: board.clientHeight * this.homeFrac.fy }
+		const bw = board.clientWidth
+		const bh = board.clientHeight
+		let x = bw * this.homeFrac.fx
+		let y = bh * this.homeFrac.fy
+		// 좁은 화면(보드가 뷰포트 폭을 거의 채움): 보드 옆 대기 지점이 화면 밖 →
+		// x 를 뷰포트 안쪽으로 클램프하고 보드 위/아래로 파킹 (보드·말 미가림 + 가로 오버플로 방지)
+		const b = board.getBoundingClientRect()
+		const half = this.w / 2 + 4
+		const lo = half - b.left
+		const hi = document.documentElement.clientWidth - b.left - half
+		if (x < lo || x > hi) {
+			x = Math.min(Math.max(x, lo), hi)
+			y = this.homeFrac.fy < 0.5 ? bh * -0.1 : bh * 1.1
+		}
+		this.home = { x, y }
 		return this.home
 	}
 }
@@ -141,10 +155,16 @@ export async function mountShips(board, teams = ['p1', 'p2']) {
 		ships[tm] = new Ship(layer, tm, d.home, d.sprite, d.hue)
 	}
 	await Promise.all(Object.values(ships).map(s => s.ready))
-	for (const s of Object.values(ships)) {
-		const h = s.resolveHome(board)
-		s.place(h.x, h.y)
+	const placeHome = () => {
+		for (const s of Object.values(ships)) {
+			const atHome = s.x === s.home.x && s.y === s.home.y
+			const h = s.resolveHome(board)
+			if (atHome) s.place(h.x, h.y) // 비행 중이면 다음 귀환이 새 홈을 사용
+		}
 	}
+	placeHome()
+	// 회전/리사이즈 → 보드 크기 변화 시 대기 우주선 재배치 (보드 제거 시 관찰도 함께 소멸)
+	new ResizeObserver(placeHome).observe(board)
 	return ships
 }
 

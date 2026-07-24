@@ -1,13 +1,17 @@
 /* 씬 레이아웃 — 손그림 프레임 버튼 + 중앙 정렬. */
 
 .scene {
+	--px: 1.2em; /* 좌우 패딩 — 보드 폭 산식(board.css)과 공유하는 SSOT */
 	min-height: 100vh;
+	min-height: 100dvh; /* 모바일 주소창 대응 (100vh 폴백) */
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 	gap: 1.1em;
-	padding: 1.2em;
+	/* 노치/홈바(safe-area) 안쪽으로 콘텐츠 유지 */
+	padding: max(1.2em, env(safe-area-inset-top)) max(var(--px), env(safe-area-inset-right))
+		max(1.2em, env(safe-area-inset-bottom)) max(var(--px), env(safe-area-inset-left));
 	text-align: center;
 }
 .scene .logo { font-family: var(--font-title); font-size: 3rem; line-height: 1; }
@@ -27,6 +31,12 @@
 	border: 0;
 	border-image: var(--frame-circle) 62 / .9em / .12em;
 	transition: transform .09s ease;
+	/* 터치 최소 타깃 44px (Dongle 상단 치우침 보정 padding 은 유지한 채 flex 정렬) */
+	min-height: 44px;
+	min-width: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 .btn:hover { transform: scale(1.05); }
 .btn:active { transform: scale(.96); }
@@ -43,13 +53,19 @@
 	align-items: center;
 }
 
-/* Play HUD + Pause */
+/* Play HUD + Pause — in-flow 헤더 (fixed 금지: 가로모드에서 보드/턴라벨과 겹치는 원인이었다).
+ * 보드와 같은 폭 상한으로 보드 위에 정렬. 좁은 화면은 줄바꿈, 스테이지명은 말줄임. */
 .play-top {
-	position: fixed; top: .5em; left: 0; right: 0; z-index: 10;
+	width: min(100%, 560px);
 	display: flex; justify-content: space-between; align-items: center;
-	padding: 0 .8em; font-size: .85em;
+	gap: .3em .8em; flex-wrap: wrap;
+	font-size: .85em;
 }
-.play-hud { display: flex; align-items: center; gap: .4em; }
+.play-top > .sub {
+	flex: 1 1 auto; min-width: 0; text-align: left;
+	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.play-hud { display: flex; align-items: center; gap: .4em; flex-shrink: 0; margin-left: auto; }
 .pause-overlay {
 	position: fixed; inset: 0; z-index: 20;
 	background: #efeee7d9;
@@ -58,6 +74,7 @@
 .pause-overlay .logo { font-family: var(--font-title); font-size: 1.8rem; }
 
 /* Result */
+.result-badge { width: 3.5em; height: 3.5em; } /* 짧은 화면 압축은 아래 미디어쿼리 */
 .result-head { font-family: var(--font-title); font-size: 2.6rem; }
 .result-head.win { color: var(--p1); }
 .result-head.lose { color: var(--p2); }
@@ -68,11 +85,26 @@
 .credits-body a { color: var(--p1); text-decoration: none; }
 .credits-body .owner { font-weight: 700; }
 
-.back-btn { position: fixed; left: .8em; top: .8em; z-index: 10; }
+.back-btn {
+	position: fixed; z-index: 10;
+	left: max(.8em, env(safe-area-inset-left));
+	top: max(.8em, env(safe-area-inset-top));
+}
 
 /* 스테이지 선택 (캠페인 챕터 그리드) */
-.stage-select-scene { justify-content: flex-start; }
+.stage-select-scene { justify-content: flex-start; padding-bottom: 0; }
 .stage-list { display: flex; flex-direction: column; gap: 1em; width: min(94vw, 46em); }
+
+/* 난이도/Start 액션바 — sticky bottom: 긴 목록을 스크롤해도 항상 도달 가능(모바일 UX 핵심) */
+.stage-actions {
+	position: sticky; bottom: 0; z-index: 5;
+	align-self: stretch;
+	margin: 0 calc(-1 * max(var(--px), env(safe-area-inset-right))) 0 calc(-1 * max(var(--px), env(safe-area-inset-left)));
+	padding: .6em max(var(--px), env(safe-area-inset-right)) max(.7em, env(safe-area-inset-bottom)) max(var(--px), env(safe-area-inset-left));
+	display: flex; flex-direction: column; gap: .55em; align-items: center;
+	background: #efeee7f0;
+	box-shadow: 0 -1px 0 #0002;
+}
 .chapter-head { font-family: var(--font-title); font-size: 1.15rem; text-align: left; opacity: .75; margin-bottom: .35em; }
 .stage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr)); gap: .55em; }
 .stage-card { transition: transform .1s ease; padding: .55em .5em .45em; gap: .18em; font-size: .82rem; }
@@ -81,3 +113,18 @@
 .stage-card[aria-selected="true"] { background: var(--p1-soft); }
 .stage-card.locked { opacity: .45; }
 .stage-card.locked:hover { transform: none; }
+
+/* ---------- 뷰포트 적응 ---------- */
+/* 짧은 화면(모바일 가로 등): 세로 리듬 압축 — 결과/타이틀 CTA 가 첫 화면에 들어오게 */
+@media (max-height: 520px) {
+	.scene { gap: .55em; }
+	.scene .logo { font-size: 2rem; }
+	.result-head { font-size: 1.8rem; }
+	.result-badge { width: 2.2em; height: 2.2em; }
+	.btn-col { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+	.card { padding: .6em 1em; }
+}
+/* 초협폭(소형 폰): 좌우 여백 축소 → 보드/카드 가용폭 확보 */
+@media (max-width: 430px) {
+	.scene { --px: .5em; }
+}

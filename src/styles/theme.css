@@ -38,11 +38,17 @@
 	user-select: none;
 	-webkit-user-select: none;
 	-webkit-user-drag: none;
+	-webkit-tap-highlight-color: transparent;
 }
 
 html,
 body {
+	/* 모바일 주소창 수축/확장 대응: dvh 지원 브라우저는 동적 뷰포트 기준 (100vh 는 폴백) */
 	min-height: 100vh;
+	min-height: 100dvh;
+	/* 보드 밖 FX(우주선 대기/비행)가 뷰포트를 벗어나도 가로 스크롤 금지 */
+	overflow-x: hidden;
+	overflow-x: clip;
 }
 
 body {
@@ -50,21 +56,31 @@ body {
 	font-family: var(--font-body);
 	font-size: clamp(18px, 2.2vmin, 28px);
 
-	background-image: url(/germ-warfare/assets/paper.jpg);
-	background-repeat: repeat;
-	background-attachment: fixed;
-	background-size: 15em;
-
 	/* 손그림 커스텀 커서 (CSS만; 애니 그림자 커서는 후속 폴리시) */
 	cursor: url(/germ-warfare/assets/cursor/pointer3D.png) 2 2, auto;
 }
 
-/* 상호작용 요소 = 손 커서 */
+/* 종이 텍스처 — 고정 레이어(pseudo)로 분리.
+ * body background-attachment:fixed 는 iOS Safari 에서 미지원/리페인트 버그 → fixed 요소로 대체. */
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	background-image: url(/germ-warfare/assets/paper.jpg);
+	background-repeat: repeat;
+	background-size: 15em;
+}
+
+/* 상호작용 요소 = 손 커서 + 터치 최적화(더블탭 줌/지연 제거) */
 button,
 a,
 .clickable,
-[data-clickable] {
+[data-clickable],
+.tile,
+.stage-card {
 	cursor: url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer;
+	touch-action: manipulation;
 }
 
 h1,
@@ -97,3 +113,33 @@ h1,
 /* N:N 프리포올 — p3/p4 는 p1/p2 스프라이트 재활용(+씬에서 hue-rotate) */
 .cell[data-owner="p3"] { background-image: var(--cell-p1); }
 .cell[data-owner="p4"] { background-image: var(--cell-p2); }
+
+/* 모바일(폰) 가로모드 차단 — 게임은 세로 전용.
+ * 조건: 가로 방향 + 터치 기기(pointer: coarse) + 폰 높이(≤500px) — 데스크탑/태블릿 무관.
+ * 오버레이가 게임 전체를 덮어 입력도 차단한다 (#loading z-index 1000 아래). */
+#rotate-notice { display: none; }
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 500px) {
+	#rotate-notice {
+		position: fixed;
+		inset: 0;
+		z-index: 900;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: .3em;
+		text-align: center;
+		background: #efeee7 url(/germ-warfare/assets/paper.jpg) repeat;
+		background-size: 15em;
+	}
+}
+#rotate-notice .ph { font-size: 3rem; animation: rotate-hint 2s ease-in-out infinite; }
+#rotate-notice .t { font-family: var(--font-title); font-size: 1.3rem; }
+#rotate-notice .s { opacity: .55; }
+@keyframes rotate-hint {
+	0%, 20%  { transform: rotate(90deg); }
+	50%, 100% { transform: rotate(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+	#rotate-notice .ph { animation: none; }
+}

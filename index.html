@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 	<title>세균전 | Germ Warfare</title>
 
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -27,6 +27,12 @@
 </head>
 <body>
 	<div id="app"></div>
+	<!-- 모바일(폰) 가로모드 차단 — 세로 전용 안내. 표시 조건은 theme.css 미디어쿼리 -->
+	<div id="rotate-notice">
+		<div class="ph">📱</div>
+		<div class="t">세로 모드로 돌려주세요</div>
+		<div class="s">Please rotate to portrait</div>
+	</div>
 	<div id="loading">
 		<div class="box">
 			<div class="t">🧬 GERM WARFARE</div>
