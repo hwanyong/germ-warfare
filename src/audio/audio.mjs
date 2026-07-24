@@ -76,12 +76,13 @@ export function unlockOnGesture(onUnlock) {
 	events.forEach(e => window.addEventListener(e, tryResume, { capture: true }))
 }
 
+/** @returns 재생된 source(길게 우는 징글처럼 씬 이탈 시 직접 stop() 해야 하는 호출부용) — 미재생 시 null */
 export function playSfx(name, { gain = 1, rate = 1 } = {}) {
 	// suspended 중 start() 하면 resume 순간 밀린 소리가 한꺼번에 터진다 — running 아닐 땐 무시
-	if (!ctx || ctx.state !== 'running') return
+	if (!ctx || ctx.state !== 'running') return null
 	const buffer = buffers.get(name)
 	const def = SOUNDS[name]
-	if (!buffer || !def) return
+	if (!buffer || !def) return null
 	const src = ctx.createBufferSource()
 	src.buffer = buffer
 	src.playbackRate.value = rate
@@ -90,6 +91,7 @@ export function playSfx(name, { gain = 1, rate = 1 } = {}) {
 	src.connect(g)
 	g.connect(sfxGain)
 	src.start()
+	return src
 }
 
 /** BGM 재생/전환 — 같은 곡이면 유지, 다른 곡이면 페이드아웃 후 교체 (씬별 BGM 매핑용) */

@@ -60,7 +60,8 @@ export function resultScene(ctx) {
 		<div class="btn-col">${buttons}</div>
 	`)
 
-	playSfx(win ? 'jingle-win' : 'jingle-lose') // 결과 징글 (BGM 위에 얹힘)
+	// 결과 징글 (BGM 위에 얹힘) — SFX 는 재생 후 취소 불가라, 씬 이탈 시 cleanup() 에서 직접 stop()
+	const jingle = playSfx(win ? 'jingle-win' : 'jingle-lose')
 
 	// ---- 절차적 점수 연출 (승리 시) ----
 	let alive = true
@@ -125,5 +126,5 @@ export function resultScene(ctx) {
 		else if (act === 'easier') ctx.go('play', { stage, difficulty: PREV[difficulty] })
 		else if (act === 'select') ctx.go('stage-select', { difficulty })
 	})
-	return { el, cleanup() { alive = false } }
+	return { el, cleanup() { alive = false; try { jingle?.stop() } catch { /* 이미 정지됨 */ } } }
 }
