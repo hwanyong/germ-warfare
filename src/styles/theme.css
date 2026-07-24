@@ -133,7 +133,26 @@ h1,
 		background-size: 15em;
 	}
 }
-#rotate-notice .ph { font-size: 3rem; animation: rotate-hint 2s ease-in-out infinite; }
+/* 폰 실루엣 — CSS 도형 (UI 이모지 금지 규약). ::after = 홈 인디케이터 바 */
+#rotate-notice .ph {
+	position: relative;
+	width: 1.9em;
+	height: 3.4em;
+	border: .22em solid var(--ink);
+	border-radius: .55em;
+	animation: rotate-hint 2s ease-in-out infinite;
+}
+#rotate-notice .ph::after {
+	content: '';
+	position: absolute;
+	left: 50%;
+	bottom: .18em;
+	width: .9em;
+	height: .18em;
+	transform: translateX(-50%);
+	border-radius: .1em;
+	background: var(--ink);
+}
 #rotate-notice .t { font-family: var(--font-title); font-size: 1.3rem; }
 #rotate-notice .s { opacity: .55; }
 @keyframes rotate-hint {

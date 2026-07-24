@@ -19,7 +19,7 @@ public/assets/
   ui/            uipack.svg (Kenney UI 벡터)
   textures: paper.jpg
 ```
-> 코드 배선 중인 활성 에셋: cell-green/pink, ship/ship-p1·p2, laser/beam-p1·p2·burst, frame/thin·circle·square, cursor/pointer3D·hand, crosshair/aim-move·clone, paper. 나머지는 라이브러리(P0에서 배경/이펙트로 사용 예정).
+> 코드 배선 중인 활성 에셋: cell-green/pink, ship/ship-p1·p2, laser/beam-p1·p2·burst, frame/thin·circle·square, cursor/pointer3D·hand, crosshair/aim-move·clone, paper, mascot/germ-green·pink(플레이 HUD 턴표시·result), germ-green·pink-left(타이틀 데코), germ-green-fast(승리 씬) — `src/scene/mascot.mjs`. 나머지는 라이브러리(P0에서 배경/이펙트로 사용 예정).
 
 ## cartography — 성·교회·탑
 _마을 거점·방어 건물. 성 4종/교회 2종/탑 5종의 미묘한 차이 주의._

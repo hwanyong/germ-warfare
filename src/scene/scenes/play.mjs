@@ -9,7 +9,8 @@ import { gridMoves } from '../../game/map.mjs'
 import { STAGES } from '../../data/stages.mjs'
 import { isTutorialDone } from '../../storage/progress.mjs'
 import { t, getLang } from '../../i18n/index.mjs'
-import { playSfx } from '../../audio/audio.mjs'
+import { playSfx, playBgm } from '../../audio/audio.mjs'
+import { mascotSrc, frozenMascot } from '../mascot.mjs'
 
 // FX 단계 → 사운드 (playMove/playJump 공용). 귀환·트랙터빔은 기존 소리 변조 재활용.
 const PHASE_SFX = {
@@ -63,13 +64,7 @@ export function playScene(ctx) {
 	const el = div('scene', `
 		<div class="play-top">
 			<span class="sub">${stageData.name[getLang()] ?? stageData.name.en} · ${difficulty.toUpperCase()}${aiLevel !== difficulty ? ` · AI ${aiLevel.toUpperCase()}` : ''}</span>
-			<div class="play-hud">
-				${VIEW_TEAMS.map((tm, i) => `
-					${i > 0 ? '<span class="sub">:</span>' : ''}
-					<span class="cell badge" data-owner="${tm}" style="width:1.1em;height:1.1em;display:inline-block;${TEAM_HUE[tm] ? `filter:hue-rotate(${TEAM_HUE[tm]}deg)` : ''}"></span>
-					<span class="num" data-score="${tm}">00</span>`).join('')}
-				<button class="btn" data-act="pause" style="font-size:1rem;padding:.1em .5em">⏸</button>
-			</div>
+			<button class="btn" data-act="pause" style="font-size:1rem;padding:.1em .5em;letter-spacing:.1em">II</button>
 		</div>
 		<div class="turn-label" id="turn"></div>
 		<div class="board" id="board" style="grid-template-columns:repeat(${W},1fr);grid-template-rows:repeat(${H},1fr);aspect-ratio:${W}/${H};--ar:${(W / H).toFixed(4)}">
@@ -79,11 +74,44 @@ export function playScene(ctx) {
 					: `<div class="tile frame-thin" data-pos="${r}${x}"></div>`).join('')).join('')}
 			<div class="fx-layer"></div>
 		</div>
+		<div class="score-panel">
+			${VIEW_TEAMS.map(tm => `
+				<div class="score-chip" data-chip="${tm}">
+					<img class="mascot" data-mascot="${tm}" src="${mascotSrc(tm)}" alt=""${TEAM_HUE[tm] ? ` style="filter:hue-rotate(${TEAM_HUE[tm]}deg)"` : ''}>
+					<span class="num" data-score="${tm}">00</span>
+				</div>`).join('')}
+		</div>
 	`)
 
 	const board = el.querySelector('#board')
 	const scoreEls = Object.fromEntries(VIEW_TEAMS.map(tm => [tm, el.querySelector(`[data-score="${tm}"]`)]))
 	const turnEl = el.querySelector('#turn')
+	const chipEls = Object.fromEntries(VIEW_TEAMS.map(tm => [tm, el.querySelector(`[data-chip="${tm}"]`)]))
+	const mascotEls = Object.fromEntries(VIEW_TEAMS.map(tm => [tm, el.querySelector(`[data-mascot="${tm}"]`)]))
+
+	// 턴 표시 — 현재 턴 팀 마스코트만 걷기 애니, 나머지는 첫 프레임 정지.
+	// (애니 webp 는 정지 불가 → frozenMascot 이 뜬 정적 프레임으로 스왑, 비동기 완료 시 active 재확인)
+	function setTurnTeam(active) {
+		for (const tm of VIEW_TEAMS) {
+			const on = tm === active
+			chipEls[tm].classList.toggle('active', on)
+			const img = mascotEls[tm]
+			if (on) img.src = mascotSrc(tm)
+			else frozenMascot(tm).then(u => { if (!chipEls[tm].classList.contains('active')) img.src = u })
+		}
+	}
+
+	// 실시간 전투 BGM — 칸이 절반 이상 차면 우세/열세 변주로 교체, 동률은 직전 곡 유지 (ADR-009)
+	let battleBgm = 'bgm-battle'
+	function syncBattleBgm() {
+		const total = ENGINE_TEAMS.reduce((a, u) => a + map.count[u], 0)
+		if (total * 2 < map.totalCells) return // 전반전 — 기본 전투 테마 유지
+		const own = map.count[HUMAN]
+		const top = Math.max(...ENGINE_TEAMS.filter(u => u !== HUMAN).map(u => map.count[u]))
+		if (own === top) return
+		const want = own > top ? 'bgm-battle-up' : 'bgm-battle-down'
+		if (want !== battleBgm) { battleBgm = want; playBgm(want) }
+	}
 
 	installFx()
 
@@ -274,12 +302,40 @@ export function playScene(ctx) {
 			})
 		}
 		postMove(before, toPos) // 감염 뒤집기 애니 + 점령 마을 파괴
+		syncBattleBgm() // 수 반영 후 우세/열세 재평가
+	}
+
+	// 시작 카운트다운 — 3·2·1·시작! 보드 위 오버레이 (게임 시작 안내)
+	async function countdown() {
+		const ov = div('countdown')
+		board.appendChild(ov)
+		const beat = (txt, sfx) => {
+			ov.textContent = txt
+			sfx()
+			ov.animate(
+				[{ transform: 'scale(1.7)', opacity: 0 }, { transform: 'scale(1)', opacity: 1, offset: .35 }, { transform: 'scale(1)', opacity: 1 }],
+				{ duration: 560, easing: 'ease-out' }
+			)
+		}
+		for (const n of ['3', '2', '1']) {
+			while (paused && running) await sleep(120) // 카운트다운 중 일시정지 존중
+			if (!running) break
+			beat(n, () => playSfx('sfx-select', { rate: 1.25 }))
+			await sleep(620)
+		}
+		while (paused && running) await sleep(120)
+		if (running) {
+			beat(t('play.start'), () => playSfx('sfx-turn'))
+			await sleep(560)
+		}
+		ov.remove()
 	}
 
 	// 자동 마무리 — 인터랙션 차단, CLONE 만(빈칸 단조 감소 → 타팀 부활 불가) 순차 채움
 	async function autoFinish(filler) {
 		clearHints()
 		turnEl.textContent = t('play.finishing')
+		setTurnTeam(viewOf(filler))
 		const ship = ships[viewOf(filler)]
 		// 주의: isTerminal 을 가드로 쓰면 전멸(생존≤1) 상태에서 한 칸도 못 채움 — 빈칸 기준으로 순회
 		while (running) {
@@ -293,9 +349,11 @@ export function playScene(ctx) {
 			const before = map.fields.map(r => r.slice())
 			await playQuickFill(board, ship, {
 				pos: posStr(mv.to),
+				onPhase: p => { if (p === 'laser') playSfx('sfx-laser', { rate: 1.2, gain: 0.5 }) }, // 연속 발사 — 저게인 변조
 				onImpact: () => { map.applyMove(filler, mv.from, mv.to); playSfx('sfx-spawn', { gain: 0.6, rate: 1.1 }); syncTile(posStr(mv.to), { pop: true }); syncAll() }
 			})
 			postMove(before, posStr(mv.to))
+			syncBattleBgm()
 		}
 		if (running) await shipHome(ship)
 		if (running) finishGame()
@@ -312,7 +370,9 @@ export function playScene(ctx) {
 	async function turnLoop() {
 		ships = await mountShips(board, VIEW_TEAMS)
 		reset()
-		await sleep(300)
+		setTurnTeam(null) // 카운트다운 동안 전원 정지
+		await countdown()
+		if (!running) return
 		let idx = 0 // 라운드로빈: human(p1) 선공 → AI 팀들 순서대로
 		let stall = 0 // 연속 패스 수 (전원 무수 감지)
 		while (running) {
@@ -341,6 +401,7 @@ export function playScene(ctx) {
 			stall = 0
 
 			turnEl.textContent = cur === HUMAN ? t('play.yourTurn') : t('play.aiTurn')
+			setTurnTeam(viewOf(cur)) // 현재 턴 마스코트만 걷기 애니
 			if (cur === HUMAN) playSfx('sfx-turn') // "내 차례" 알림음 (AI 턴은 무음 — N:N 스팸 방지)
 			if (cur === HUMAN) {
 				const mv = await humanTurn()

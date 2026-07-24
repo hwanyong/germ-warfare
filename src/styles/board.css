@@ -13,10 +13,24 @@
 	grid-template-rows: repeat(7, 1fr);
 	gap: 0.35em;
 
-	--board-chrome: 9em;
+	--board-chrome: 11em; /* HUD·턴라벨·점수 패널(마스코트)·여백 몫 */
 	width: min(calc(100vw - 2 * var(--px, 1.2em)), 560px, calc((100vh - var(--board-chrome)) * var(--ar, 1)));
 	width: min(calc(100vw - 2 * var(--px, 1.2em)), 560px, calc((100dvh - var(--board-chrome)) * var(--ar, 1)));
 	aspect-ratio: 1;
+}
+
+/* 시작 카운트다운 오버레이 — 보드 중앙, fx-layer(z5) 위 (play.mjs countdown) */
+.countdown {
+	position: absolute;
+	inset: 0;
+	z-index: 8;
+	display: grid;
+	place-items: center;
+	font-family: var(--font-title);
+	font-size: 3.4rem;
+	color: var(--ink);
+	text-shadow: 0 0 .25em #efeee7, 0 0 .5em #efeee7;
+	pointer-events: none;
 }
 
 /* 초협폭: 칸 사이 간격 축소 → 타일 탭타깃 확보 (10×10 스테이지 대응) */
@@ -29,7 +43,9 @@
  * 라벨 마진만큼 보드 세로 몫(--board-chrome)도 함께 보정. */
 @media (max-width: 700px) {
 	.turn-label { margin-bottom: 2.4em; }
-	.board { --board-chrome: 12em; }
+	.board { --board-chrome: 16em; }
+	/* 아래 파킹 우주선(보드 하단 밖)이 점수 패널을 가리지 않게 간격 확보 */
+	.score-panel { margin-top: 2.2em; }
 }
 
 .tile {

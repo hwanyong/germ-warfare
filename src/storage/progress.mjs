@@ -8,12 +8,19 @@ const KEY = 'gw-progress-v1'
 //  margin = own - enemy, elimMult = 전멸 2.0, fastBonus = max(0, parTurns - turns) * 12
 export const SCORE = { OWN: 10, MARGIN: 8, ELIM_MULT: 2.0, FAST: 12 }
 
-export function computeScore({ own, enemy, turns, parTurns }) {
+/** 점수 항목 분해 — result 씬 절차 연출용. computeScore 와 단일 공식(SSOT). */
+export function scoreBreakdown({ own, enemy, turns, parTurns }) {
 	const margin = own - enemy
-	const elimMult = enemy === 0 ? SCORE.ELIM_MULT : 1.0
-	const fastBonus = Math.max(0, parTurns - turns) * SCORE.FAST
-	return Math.round((own * SCORE.OWN + margin * SCORE.MARGIN) * elimMult + fastBonus)
+	const elim = enemy === 0
+	const germs = own * SCORE.OWN
+	const marginPts = margin * SCORE.MARGIN
+	const sub = germs + marginPts
+	const mult = elim ? SCORE.ELIM_MULT : 1.0
+	const fast = Math.max(0, parTurns - turns) * SCORE.FAST
+	return { own, margin, germs, marginPts, elim, mult, sub, fast, total: Math.round(sub * mult + fast) }
 }
+
+export const computeScore = params => scoreBreakdown(params).total
 
 function load() {
 	try { return JSON.parse(localStorage.getItem(KEY)) ?? {} }
