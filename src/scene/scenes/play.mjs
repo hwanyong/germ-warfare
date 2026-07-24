@@ -21,7 +21,6 @@ const PHASE_SFX = {
 	drop: () => playSfx('sfx-impact'),
 	return: () => playSfx('sfx-launch', { rate: 0.85, gain: 0.5 })
 }
-const phaseSfx = p => PHASE_SFX[p]?.()
 
 const CARTO = '/germ-warfare/assets/cartography'
 const ALL_ENGINE_TEAMS = [USERS.ID0, USERS.ID1, 'USER2', 'USER3'] // N:N 프리포올 최대 4팀
@@ -59,6 +58,10 @@ export function playScene(ctx) {
 	let ships
 	let turns = 0
 	let cancelHuman = null
+	// 씬 사후 발음 차단 — cleanup(씬 전환) 후에도 인플라이트 애니/AI 수의 await 연속은
+	// 끝까지 실행되므로, 사운드·BGM 방출은 전부 running 게이트를 거쳐야 새 씬 오디오를 안 덮는다.
+	const phaseSfx = p => { if (running) PHASE_SFX[p]?.() }
+	const sfx = (...args) => { if (running) playSfx(...args) }
 	const aiRng = mulberry32(0xa1b2 ^ Date.now() >>> 0) // AI 블런더/노이즈용 (매판 다른 변주)
 
 	const el = div('scene', `
@@ -104,6 +107,7 @@ export function playScene(ctx) {
 	// 실시간 전투 BGM — 칸이 절반 이상 차면 우세/열세 변주로 교체, 동률은 직전 곡 유지 (ADR-009)
 	let battleBgm = 'bgm-battle'
 	function syncBattleBgm() {
+		if (!running) return // 씬 이탈 후 인플라이트 수가 새 씬의 BGM 을 전투 변주로 덮는 것 방지
 		const total = ENGINE_TEAMS.reduce((a, u) => a + map.count[u], 0)
 		if (total * 2 < map.totalCells) return // 전반전 — 기본 전투 테마 유지
 		const own = map.count[HUMAN]
@@ -164,7 +168,7 @@ export function playScene(ctx) {
 			if (now && was && now !== was && pos !== exclude) { flipAnim(pos); flipped++ } // 감염 뒤집기
 			if (now && buildings[pos] && !buildings[pos].destroyed) destroyBuilding(pos) // 점령 파괴
 		} })
-		if (flipped) playSfx('sfx-infect')
+		if (flipped) sfx('sfx-infect')
 	}
 
 	function syncTile(pos, { pop = false } = {}) {
@@ -254,12 +258,12 @@ export function playScene(ctx) {
 					clearHints(); markSelectable()
 					source = { x, y }
 					t.classList.add('selected')
-					playSfx('sfx-select')
+					sfx('sfx-select')
 					showLegal()
 				} else if (source && t.classList.contains('legal')) { // 실행
 					finish({ from: source, to: { x, y } })
 				} else { // 빈 곳 = 선택 해제
-					if (source) playSfx('sfx-invalid') // 소스 선택 상태에서 비합법 타겟 시도
+					if (source) sfx('sfx-invalid') // 소스 선택 상태에서 비합법 타겟 시도
 					clearHints(); markSelectable(); source = null
 				}
 			}
@@ -292,13 +296,13 @@ export function playScene(ctx) {
 				fromPos, toPos,
 				onPhase: phaseSfx,
 				onPickup: () => { tileEl(fromPos).querySelector('.cell')?.remove() },
-				onDrop: () => { map.applyMove(userId, from, to); playSfx('sfx-spawn'); syncTile(toPos, { pop: true }); syncAll() }
+				onDrop: () => { map.applyMove(userId, from, to); sfx('sfx-spawn'); syncTile(toPos, { pop: true }); syncAll() }
 			})
 		} else {
 			await playMove(board, ships[team], {
 				pos: toPos,
 				onPhase: phaseSfx,
-				onImpact: () => { map.applyMove(userId, from, to); playSfx('sfx-spawn'); syncTile(toPos, { pop: true }); syncAll() }
+				onImpact: () => { map.applyMove(userId, from, to); sfx('sfx-spawn'); syncTile(toPos, { pop: true }); syncAll() }
 			})
 		}
 		postMove(before, toPos) // 감염 뒤집기 애니 + 점령 마을 파괴
@@ -309,9 +313,9 @@ export function playScene(ctx) {
 	async function countdown() {
 		const ov = div('countdown')
 		board.appendChild(ov)
-		const beat = (txt, sfx) => {
+		const beat = (txt, playBeat) => {
 			ov.textContent = txt
-			sfx()
+			playBeat()
 			ov.animate(
 				[{ transform: 'scale(1.7)', opacity: 0 }, { transform: 'scale(1)', opacity: 1, offset: .35 }, { transform: 'scale(1)', opacity: 1 }],
 				{ duration: 560, easing: 'ease-out' }
@@ -320,12 +324,12 @@ export function playScene(ctx) {
 		for (const n of ['3', '2', '1']) {
 			while (paused && running) await sleep(120) // 카운트다운 중 일시정지 존중
 			if (!running) break
-			beat(n, () => playSfx('sfx-select', { rate: 1.25 }))
+			beat(n, () => sfx('sfx-select', { rate: 1.25 }))
 			await sleep(620)
 		}
 		while (paused && running) await sleep(120)
 		if (running) {
-			beat(t('play.start'), () => playSfx('sfx-turn'))
+			beat(t('play.start'), () => sfx('sfx-turn'))
 			await sleep(560)
 		}
 		ov.remove()
@@ -349,8 +353,8 @@ export function playScene(ctx) {
 			const before = map.fields.map(r => r.slice())
 			await playQuickFill(board, ship, {
 				pos: posStr(mv.to),
-				onPhase: p => { if (p === 'laser') playSfx('sfx-laser', { rate: 1.2, gain: 0.5 }) }, // 연속 발사 — 저게인 변조
-				onImpact: () => { map.applyMove(filler, mv.from, mv.to); playSfx('sfx-spawn', { gain: 0.6, rate: 1.1 }); syncTile(posStr(mv.to), { pop: true }); syncAll() }
+				onPhase: p => { if (p === 'laser') sfx('sfx-laser', { rate: 1.2, gain: 0.5 }) }, // 연속 발사 — 저게인 변조
+				onImpact: () => { map.applyMove(filler, mv.from, mv.to); sfx('sfx-spawn', { gain: 0.6, rate: 1.1 }); syncTile(posStr(mv.to), { pop: true }); syncAll() }
 			})
 			postMove(before, posStr(mv.to))
 			syncBattleBgm()
@@ -402,7 +406,7 @@ export function playScene(ctx) {
 
 			turnEl.textContent = cur === HUMAN ? t('play.yourTurn') : t('play.aiTurn')
 			setTurnTeam(viewOf(cur)) // 현재 턴 마스코트만 걷기 애니
-			if (cur === HUMAN) playSfx('sfx-turn') // "내 차례" 알림음 (AI 턴은 무음 — N:N 스팸 방지)
+			if (cur === HUMAN) sfx('sfx-turn') // "내 차례" 알림음 (AI 턴은 무음 — N:N 스팸 방지)
 			if (cur === HUMAN) {
 				const mv = await humanTurn()
 				if (!running || !mv) return
@@ -410,6 +414,7 @@ export function playScene(ctx) {
 				await execMove(viewOf(cur), cur, mv.from, mv.to)
 			} else {
 				await sleep(450)
+				if (!running) return // 대기 중 씬 이탈 — 죽은 씬에서 수(애니+사운드) 두지 않음
 				const mv = pickMove(map, cur, aiLevel, aiRng)
 				if (mv) await execMove(viewOf(cur), cur, mv.from, mv.to)
 			}
