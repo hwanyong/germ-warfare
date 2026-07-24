@@ -18,6 +18,6 @@ export const SCENES = {
 	credits: creditsScene
 }
 
-export function createManager(root, store = {}) {
-	return new SceneManager(root, SCENES, store)
+export function createManager(root, store = {}, hooks = {}) {
+	return new SceneManager(root, SCENES, store, hooks)
 }

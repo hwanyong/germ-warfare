@@ -2,19 +2,22 @@
 //
 // 씬 = factory(ctx) => { el: HTMLElement, cleanup?: () => void }.
 // ctx = { go(name, params), back(), params, store }.
+// hooks.onEnter(name, params) = 씬 진입 알림(BGM 전환 등 횡단 관심사용 — 매니저는 소비처 무지).
 // 참고: docs/roadmap.md PHASE A(A1)
 
 export class SceneManager {
 	#root
 	#scenes
 	#store
+	#onEnter
 	#current = null
 	#stack = [] // [{ name, params }]
 
-	constructor(root, scenes, store = {}) {
+	constructor(root, scenes, store = {}, { onEnter } = {}) {
 		this.#root = root
 		this.#scenes = scenes
 		this.#store = store
+		this.#onEnter = onEnter
 	}
 
 	go(name, params = {}) {
@@ -44,6 +47,7 @@ export class SceneManager {
 		}
 		this.#current = this.#scenes[name](ctx)
 		this.#root.appendChild(this.#current.el)
+		this.#onEnter?.(name, params)
 	}
 
 	#leave() {

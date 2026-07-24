@@ -12,7 +12,8 @@ let master = null
 let bgmGain = null
 let sfxGain = null
 let bgmSrc = null
-let requestedBgm = null // 디코드 완료 전에 playBgm 이 불린 경우의 지연 시작용
+let bgmSrcGain = null // 현재 BGM 소스의 개별 게인 — 전환 페이드용
+let requestedBgm = null // 디코드 전 playBgm 호출 대비 지연 시작 + 현재 요청 곡 추적
 let muted = false
 let unlocked = false // 한 번이라도 running 이 된 적 있는지 — 인터럽션 복구 판단용
 const buffers = new Map()
@@ -91,9 +92,12 @@ export function playSfx(name, { gain = 1, rate = 1 } = {}) {
 	src.start()
 }
 
+/** BGM 재생/전환 — 같은 곡이면 유지, 다른 곡이면 페이드아웃 후 교체 (씬별 BGM 매핑용) */
 export function playBgm(name) {
-	if (!ctx || bgmSrc) return // 멱등 — 이미 재생 중이면 유지
+	if (!ctx) return
+	if (requestedBgm === name && bgmSrc) return // 멱등 — 같은 곡 재생 중
 	requestedBgm = name
+	fadeOutCurrentBgm()
 	const buffer = buffers.get(name)
 	const def = SOUNDS[name]
 	if (!buffer || !def) return // 디코드 완료 시 installAudio 쪽에서 재시도
@@ -105,11 +109,29 @@ export function playBgm(name) {
 	src.loopStart = start
 	src.loopEnd = end
 	const g = ctx.createGain()
-	g.gain.value = def.gain
+	// 페이드인 — 씬 전환 시 급시작 방지
+	g.gain.setValueAtTime(0, ctx.currentTime)
+	g.gain.linearRampToValueAtTime(def.gain, ctx.currentTime + 0.4)
 	src.connect(g)
 	g.connect(bgmGain)
 	src.start(0, start)
 	bgmSrc = src
+	bgmSrcGain = g
+}
+
+export function stopBgm() {
+	requestedBgm = null
+	fadeOutCurrentBgm()
+}
+
+function fadeOutCurrentBgm() {
+	if (!bgmSrc) return
+	const src = bgmSrc
+	const g = bgmSrcGain
+	bgmSrc = null
+	bgmSrcGain = null
+	g.gain.setTargetAtTime(0, ctx.currentTime, 0.1)
+	try { src.stop(ctx.currentTime + 0.5) } catch { /* 이미 정지됨 */ }
 }
 
 export function setMuted(v) {

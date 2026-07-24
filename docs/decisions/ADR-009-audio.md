@@ -25,8 +25,10 @@
    `src/game` 은 I/O 0 그대로. 버튼음은 전 씬 `.btn` document 위임 1곳(main.mjs).
 3. **`src/audio/manifest.mjs` = 오디오 에셋 SSOT.** `public/assets/audio/` 의 모든
    파일은 매니페스트에 등록해야 한다(데드 에셋 금지의 오디오판). 미등록 파일 금지.
-4. **12종 전 항목 배선 완료** (트리거 표 = design.md §8). menu 전용 BGM 은 미생성 —
-   현 BGM 이 전 씬 공용. 튜토리얼 미니보드는 fx 파이프 미사용이라 범위 밖.
+4. **13종 전 항목 배선 완료** (트리거 표 = design.md §8). BGM 2곡 = 씬 매핑:
+   `bgm-main`(play/result 제외 전 씬) / `bgm-battle`(play 전용) / result 는 BGM 무음(징글만).
+   매핑은 SceneManager `onEnter` 훅(매니저는 소비처 무지) + main.mjs `SCENE_BGM` 이 SSOT.
+   전환은 페이드아웃(0.1s tc)/페이드인(0.4s) 교체. 튜토리얼 미니보드는 fx 파이프 미사용이라 범위 밖.
 5. **감염음은 보드 스냅샷 diff 로 판정** — 엔진 `events.infected` 는 감염 0건에도
    발화하고 페이로드가 없어 부적합. play 씬 `postMove` 의 전후 필드 비교(뒤집힌 칸
    카운트)로 실제 감염 시에만 1회 재생.

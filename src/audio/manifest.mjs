@@ -5,7 +5,8 @@
 export const AUDIO_BASE = '/germ-warfare/assets/audio' // base 접두 규약: theme.css/fx.mjs 와 동일
 
 export const SOUNDS = {
-	'bgm-battle': { file: 'bgm-battle.mp3', kind: 'bgm', gain: 0.5, trigger: '첫 유효 제스처 시 시작(main.mjs), 갭리스 루프' },
+	'bgm-main': { file: 'bgm-main.mp3', kind: 'bgm', gain: 0.5, trigger: 'play/result 제외 전 씬 메인 테마 — 씬 매핑(main.mjs SCENE_BGM), 갭리스 루프' },
+	'bgm-battle': { file: 'bgm-battle.mp3', kind: 'bgm', gain: 0.5, trigger: 'play 씬 전용 전투 루프 — 씬 전환 시 페이드 교체' },
 	'sfx-launch': { file: 'sfx-launch.mp3', kind: 'sfx', gain: 0.9, trigger: 'playMove/playJump phase:launch (return 은 rate 0.85 재활용)' },
 	'sfx-laser': { file: 'sfx-laser.mp3', kind: 'sfx', gain: 0.9, trigger: 'playMove phase:laser (playJump pickup 은 rate 0.8 재활용)' },
 	'sfx-impact': { file: 'sfx-impact.mp3', kind: 'sfx', gain: 1.0, trigger: 'playMove phase:impact / playJump phase:drop' },

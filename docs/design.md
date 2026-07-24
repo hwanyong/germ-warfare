@@ -88,11 +88,12 @@ mascot/germ-{green,pink}.webp
 ## 8. 사운드 (구현됨 — src/audio, ADR-009)
 
 톤 = **카툰 + 레트로 SF 혼합**(손그림 아이덴티티의 청각판). ElevenLabs 생성,
-`public/assets/audio/` 12종(~1.8MB), 전부 `src/audio/manifest.mjs` 등록(SSOT). 전 항목 배선 완료:
+`public/assets/audio/` 13종(~3.2MB), 전부 `src/audio/manifest.mjs` 등록(SSOT). 전 항목 배선 완료:
 
 | 에셋 | 트리거 (배선 지점) |
 |---|---|
-| `bgm-battle` | 첫 유효 제스처 시 시작(main.mjs `unlockOnGesture`), 갭리스 루프 |
+| `bgm-main` | play/result 제외 전 씬 메인 테마 — 씬 매핑 `SCENE_BGM`(main.mjs), 첫 유효 제스처 후 발음 |
+| `bgm-battle` | play 씬 전용 전투 루프 — 씬 전환 시 페이드 교체, result 는 BGM 무음(징글만) |
 | `sfx-launch/laser/impact` | `playMove`/`playJump` onPhase — 귀환은 launch 저피치, 트랙터빔은 laser 저피치 재활용 |
 | `sfx-spawn` / `sfx-infect` | play 씬 onImpact/onDrop 생성 pop / postMove 뒤집기 diff>0 시 1회 |
 | `sfx-select` / `sfx-invalid` | play 씬 소스 세균 선택 / 소스 선택 상태에서 비합법 타겟 클릭 |
@@ -101,7 +102,7 @@ mascot/germ-{green,pink}.webp
 | `jingle-win` / `jingle-lose` | result 씬 마운트 시 승/패 분기 |
 
 사운드 켬/끔 = 설정 씬(`settings.sound`), localStorage `gw-settings`
-(`src/storage/settings.mjs`). menu 전용 BGM 은 미정(현 BGM 이 전 씬 공용).
+(`src/storage/settings.mjs`). 씬→BGM 매핑은 SceneManager `onEnter` 훅으로 main.mjs 가 담당.
 튜토리얼 미니보드는 fx 파이프 미사용이라 범위 밖. `prefers-reduced-motion` 과 비커플링 — ADR-009.
 
 ## 9. 미래 폴리시 (선택)
