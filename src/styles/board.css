@@ -50,10 +50,12 @@
 
 .tile {
 	position: relative;
-	/* 칸별 stacking context — 프리뷰/셀/버스트 변경의 페인트 무효화를 칸 안에 가둔다.
+	/* layout containment — 칸별 stacking context 로 페인트 무효화를 칸 안에 가둔다.
+	 * (paint containment 는 안 쓴다 — inset:-12% 로 칸 밖까지 삐져나오는 파괴버스트/선택
+	 * 브래킷을 잘라버림. layout 은 오버플로우를 안 자르면서 같은 격리 효과를 준다.)
 	 * 미격리 시 .cell 의 z-index 가 보드 전역 페인트 순서에 섞여, hover 프리뷰 1회 삽입에
 	 * 보드 49칸 전체 + 점수 패널까지 재페인트(suffix invalidation)되어 깜빡임이 발생했다. */
-	isolation: isolate;
+	contain: layout;
 	aspect-ratio: 1;
 	display: grid;
 	place-items: center;
@@ -152,11 +154,8 @@
 	background-repeat: no-repeat;
 	background-position: center;
 	opacity: .6;
-	animation: ghost-in .16s ease-out;
-}
-@keyframes ghost-in {
-	from { transform: scale(.5); opacity: 0; }
-	to   { transform: scale(1); opacity: .6; }
+	/* 페이드인 애니 없음(의도) — CSS/WAAPI 무엇으로든 애니메이션을 걸면 그 프레임 수만큼
+	 * 호버 storm 의 raster 비용이 늘어난다(측정: 무애니 대비 약 2.4배). 즉시 표시로 대체. */
 }
 .tile.legal[data-owner-hint="p1"] .ghost { background-image: var(--cell-p1-sm); }
 .tile .preview .badge {
