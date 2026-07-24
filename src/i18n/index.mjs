@@ -4,14 +4,19 @@
 const DICT = {
 	en: {
 		'loading': 'LOADING',
-		'title.play': 'Start Game', 'title.tutorial': 'Tutorial', 'title.settings': 'Settings', 'title.credits': 'Credits',
-		'stage.title': 'Stage Select', 'stage.name': 'Village Invasion', 'stage.best': 'Best', 'stage.start': 'Start', 'stage.back': 'Back',
+		'title.play': 'Start Game', 'title.localPvp': 'Local PvP', 'title.tutorial': 'Tutorial', 'title.settings': 'Settings', 'title.credits': 'Credits',
+		'stage.title': 'Stage Select', 'stage.titleLocal': 'Local PvP — Stage', 'stage.name': 'Village Invasion', 'stage.best': 'Best', 'stage.start': 'Start', 'stage.back': 'Back',
+		'seats.title': 'Seat Setup', 'seats.human': 'Human', 'seats.ai': 'AI', 'seats.start': 'Start', 'seats.back': 'Back', 'seats.playerLabel': 'Player {n}',
 		'play.yourTurn': 'Your turn — pick a germ', 'play.aiTurn': "AI's turn…",
+		'play.localTurn': "{name}'s turn — pick a germ", 'play.aiThink': '{name} (AI) thinking…',
+		'play.passTitle': "{name}'s turn", 'play.passHint': 'Pass the device, then tap to start', 'play.passReady': "I'm ready",
+		'play.forfeitSeat': 'Forfeit {name} (→ AI)',
 		'play.paused': 'Paused', 'play.resume': 'Resume', 'play.settings': 'Settings', 'play.quit': 'Quit',
 		'play.clone': '＋ Clone', 'play.move': '↗ Move', 'play.finishing': 'Mopping up…',
 		'result.win': 'Victory! 🎉', 'result.lose': 'So close! 😵', 'result.score': 'Score', 'result.best': 'Best', 'result.newRecord': 'New Record!',
 		'result.you': 'You', 'result.enemy': 'Enemy', 'result.turns': 'turns',
 		'result.rematch': 'Rematch', 'result.nextStage': 'Next Stage →', 'result.harder': 'Harder ↑', 'result.easier': 'Easier ↓', 'result.tryAgain': 'Try Again', 'result.select': 'Stage Select',
+		'result.draw': 'Draw', 'result.localWin': '{name} wins! 🎉', 'result.changeSeats': 'Change Seats',
 		'settings.title': 'Settings', 'settings.sound': 'Sound', 'settings.motion': 'Reduce Motion', 'settings.difficulty': 'Default Difficulty',
 		'settings.language': 'Language', 'settings.tutorialAgain': 'Tutorial Again', 'settings.credits': 'Credits', 'settings.back': 'Back', 'settings.coming': 'soon',
 		'settings.on': 'On', 'settings.off': 'Off',
@@ -27,14 +32,19 @@ const DICT = {
 	},
 	ko: {
 		'loading': '로딩중',
-		'title.play': '게임 시작', 'title.tutorial': '튜토리얼', 'title.settings': '설정', 'title.credits': '크레딧',
-		'stage.title': '스테이지 선택', 'stage.name': '마을 침공', 'stage.best': '최고점', 'stage.start': '시작', 'stage.back': '뒤로',
+		'title.play': '게임 시작', 'title.localPvp': '로컬 대전', 'title.tutorial': '튜토리얼', 'title.settings': '설정', 'title.credits': '크레딧',
+		'stage.title': '스테이지 선택', 'stage.titleLocal': '로컬 대전 — 스테이지', 'stage.name': '마을 침공', 'stage.best': '최고점', 'stage.start': '시작', 'stage.back': '뒤로',
+		'seats.title': '좌석 설정', 'seats.human': '사람', 'seats.ai': 'AI', 'seats.start': '시작', 'seats.back': '뒤로', 'seats.playerLabel': '플레이어 {n}',
 		'play.yourTurn': '내 차례 — 세균을 선택', 'play.aiTurn': 'AI 차례…',
+		'play.localTurn': '{name} 차례 — 세균 선택', 'play.aiThink': '{name} (AI) 생각 중…',
+		'play.passTitle': '{name} 차례', 'play.passHint': '기기를 넘기고 탭해서 시작', 'play.passReady': '준비됐어요',
+		'play.forfeitSeat': '{name} 기권(→AI)',
 		'play.paused': '일시정지', 'play.resume': '재개', 'play.settings': '설정', 'play.quit': '포기',
 		'play.clone': '＋ 복제', 'play.move': '↗ 이동', 'play.finishing': '남은 칸 정리 중…',
 		'result.win': '승리! 🎉', 'result.lose': '아깝다! 😵', 'result.score': '점수', 'result.best': '최고', 'result.newRecord': '신기록!',
 		'result.you': '내 세균', 'result.enemy': '적 세균', 'result.turns': '턴',
 		'result.rematch': '재대결', 'result.nextStage': '다음 스테이지 →', 'result.harder': '난이도 ↑ 도전', 'result.easier': '난이도 ↓', 'result.tryAgain': '다시 도전', 'result.select': '스테이지 선택',
+		'result.draw': '무승부', 'result.localWin': '{name} 승리! 🎉', 'result.changeSeats': '좌석 변경',
 		'settings.title': '설정', 'settings.sound': '사운드', 'settings.motion': '모션 감소', 'settings.difficulty': '기본 난이도',
 		'settings.language': '언어', 'settings.tutorialAgain': '튜토리얼 다시', 'settings.credits': '크레딧', 'settings.back': '뒤로', 'settings.coming': '준비중',
 		'settings.on': '켬', 'settings.off': '끔',
@@ -60,4 +70,8 @@ export function setLang(l) {
 	localStorage.setItem(KEY, lang)
 	document.documentElement.lang = lang
 }
-export function t(k) { return DICT[lang]?.[k] ?? DICT.en[k] ?? k }
+export function t(k, vars) {
+	let s = DICT[lang]?.[k] ?? DICT.en[k] ?? k
+	if (vars) for (const key in vars) s = s.replaceAll(`{${key}}`, vars[key])
+	return s
+}

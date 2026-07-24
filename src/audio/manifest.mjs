@@ -15,7 +15,7 @@ export const SOUNDS = {
 	'sfx-button': { file: 'sfx-button.mp3', kind: 'sfx', gain: 0.8, trigger: '전 씬 .btn 클릭 — document 위임(main.mjs)' },
 	'sfx-select': { file: 'sfx-select.mp3', kind: 'sfx', gain: 0.8, trigger: 'play 씬 소스 세균 선택' },
 	'sfx-invalid': { file: 'sfx-invalid.mp3', kind: 'sfx', gain: 0.8, trigger: 'play 씬 소스 선택 상태에서 비합법 타겟 클릭' },
-	'sfx-turn': { file: 'sfx-turn.mp3', kind: 'sfx', gain: 0.8, trigger: 'play 씬 내 턴 시작 (AI 턴 무음)' },
+	'sfx-turn': { file: 'sfx-turn.mp3', kind: 'sfx', gain: 0.8, trigger: 'play 씬 내 턴 시작 (AI 좌석 무음, 사람 좌석은 전부 재생 — 로컬 대전 다인 포함)' },
 	'jingle-win': { file: 'jingle-win.mp3', kind: 'sfx', gain: 1.0, trigger: 'result 씬 마운트 — 승리' },
 	'jingle-lose': { file: 'jingle-lose.mp3', kind: 'sfx', gain: 1.0, trigger: 'result 씬 마운트 — 패배' }
 }

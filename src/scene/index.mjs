@@ -2,6 +2,7 @@
 import { SceneManager } from './manager.mjs'
 import { titleScene } from './scenes/title.mjs'
 import { stageSelectScene } from './scenes/stage-select.mjs'
+import { seatsScene } from './scenes/seats.mjs'
 import { playScene } from './scenes/play.mjs'
 import { resultScene } from './scenes/result.mjs'
 import { settingsScene } from './scenes/settings.mjs'
@@ -11,6 +12,7 @@ import { creditsScene } from './scenes/credits.mjs'
 export const SCENES = {
 	title: titleScene,
 	'stage-select': stageSelectScene,
+	seats: seatsScene,
 	play: playScene,
 	result: resultScene,
 	settings: settingsScene,

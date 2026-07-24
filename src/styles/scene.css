@@ -73,6 +73,25 @@
 }
 .pause-overlay .logo { font-family: var(--font-title); font-size: 1.8rem; }
 
+/* Local PvP — 좌석 전환("기기 넘기기") 화면. pause-overlay 위에 뜰 일이 없어 z-index 는 같은 층. */
+.pass-overlay {
+	position: fixed; inset: 0; z-index: 20;
+	background: #efeee7f5;
+	display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8em;
+	text-align: center; padding: 1em;
+}
+.pass-overlay .logo { font-family: var(--font-title); font-size: 1.6rem; }
+
+/* Local PvP — 좌석 설정(Seats) */
+.seat-list { width: min(94vw, 30em); gap: .8em; }
+.seat-row { display: flex; align-items: center; gap: .6em; flex-wrap: wrap; justify-content: space-between; width: 100%; padding: .4em 0; border-bottom: 1px solid #0001; }
+.seat-row:last-child { border-bottom: 0; }
+.seat-name { flex: 1 1 auto; text-align: left; font-family: var(--font-body); font-size: 1.15rem; }
+.seat-row .btn { font-size: 1rem; padding: .2em .6em .1em; min-height: 36px; min-width: 36px; }
+
+/* Local PvP — 결과 순위 */
+.rank-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: .5em; }
+
 /* Result */
 .result-badge { width: 3.5em; height: 3.5em; } /* 짧은 화면 압축은 아래 미디어쿼리 */
 .result-head { font-family: var(--font-title); font-size: 2.6rem; }

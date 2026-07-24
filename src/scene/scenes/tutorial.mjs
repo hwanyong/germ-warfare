@@ -18,7 +18,7 @@ const LESSONS = [
 ]
 
 export function tutorialScene(ctx) {
-	const { returnTo, stage, difficulty } = ctx.params
+	const { returnTo, stage, difficulty, mode, players } = ctx.params
 	const owners = Array(9).fill(null)
 	owners[idx(0, 0)] = 'p1'
 	owners[idx(2, 2)] = 'p2'
@@ -129,7 +129,7 @@ export function tutorialScene(ctx) {
 
 	function finish() {
 		setTutorialDone()
-		if (returnTo === 'play') ctx.go('play', { stage, difficulty })
+		if (returnTo === 'play') ctx.go('play', { stage, difficulty, mode, players })
 		else ctx.back()
 	}
 	onClick(el, 'data-act', act => { if (act === 'skip' || act === 'done') finish() })

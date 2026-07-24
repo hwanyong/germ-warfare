@@ -5,12 +5,13 @@ import { STAGES, STAGE_ORDER, CHAPTERS } from '../../data/stages.mjs'
 import { getRecord, hasWin } from '../../storage/progress.mjs'
 import { t, getLang } from '../../i18n/index.mjs'
 
-const DIFFS = ['easy', 'normal', 'hard']
-const LABEL = { easy: 'EASY', normal: 'NORMAL', hard: 'HARD' }
+export const DIFFS = ['easy', 'normal', 'hard']
+export const LABEL = { easy: 'EASY', normal: 'NORMAL', hard: 'HARD' }
 const SKULLS = { easy: '💀', normal: '💀💀', hard: '💀💀💀' }
 
 export function stageSelectScene(ctx) {
 	let difficulty = ctx.params.difficulty ?? 'normal'
+	const mode = ctx.params.mode ?? 'pve' // 'local' = Local PvP 흐름(시작 시 seats 로)
 	const lang = getLang()
 
 	// 해금: 첫 스테이지 or 직전 스테이지 승리
@@ -43,7 +44,7 @@ export function stageSelectScene(ctx) {
 	}
 
 	const el = div('scene stage-select-scene', `
-		<div class="logo" style="font-size:2rem">${t('stage.title')}</div>
+		<div class="logo" style="font-size:2rem">${mode === 'local' ? t('stage.titleLocal') : t('stage.title')}</div>
 		<div class="stage-list" id="stages">
 			${CHAPTERS.map(ch => `
 			<div class="chapter">
@@ -87,7 +88,10 @@ export function stageSelectScene(ctx) {
 		refreshBest()
 	})
 	onClick(el, 'data-act', act => {
-		if (act === 'play') ctx.go('play', { stage: stageId, difficulty })
+		if (act === 'play') {
+			if (mode === 'local') ctx.go('seats', { stage: stageId, difficulty })
+			else ctx.go('play', { stage: stageId, difficulty })
+		}
 		else if (act === 'back') ctx.go('title')
 	})
 

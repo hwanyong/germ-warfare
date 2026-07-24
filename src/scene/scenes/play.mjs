@@ -29,11 +29,11 @@ const rowChar = y => String.fromCharCode(65 + y) // A, B, C, ...
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
 export function playScene(ctx) {
-	const { stage = 'stage-01', difficulty = 'normal' } = ctx.params
+	const { stage = 'stage-01', difficulty = 'normal', mode = 'pve', players } = ctx.params
 
 	// A6: 첫 플레이 = 튜토리얼 자동
 	if (!isTutorialDone()) {
-		queueMicrotask(() => ctx.go('tutorial', { returnTo: 'play', stage, difficulty }))
+		queueMicrotask(() => ctx.go('tutorial', { returnTo: 'play', stage, difficulty, mode, players }))
 		return { el: div('scene') }
 	}
 
@@ -52,22 +52,37 @@ export function playScene(ctx) {
 	const HUMAN = ENGINE_TEAMS[0]
 	const viewOf = uid => VIEW_TEAMS[ENGINE_TEAMS.indexOf(uid)]
 	const ownerTeam = o => (ENGINE_TEAMS.includes(o) ? viewOf(o) : null)
+	const playerLabel = uid => t('seats.playerLabel', { n: ENGINE_TEAMS.indexOf(uid) + 1 })
+
+	// 좌석 컨트롤러(사람/AI) — Local PvP(mode='local', players 전달) 또는 기존 PvE(p1=사람, 나머지 AI) 폴백.
+	// CONTROLLER 는 가변 — Pause 중 기권 시 해당 좌석만 AI(easy 고정)로 실시간 전환.
+	const CONTROLLER = {}
+	const AI_LEVEL = {}
+	ENGINE_TEAMS.forEach((uid, i) => {
+		const p = players?.find(pp => pp.team === VIEW_TEAMS[i])
+		CONTROLLER[uid] = p ? p.controller : (i === 0 ? 'human' : 'ai')
+		AI_LEVEL[uid] = p ? (p.aiDifficulty ?? 'normal') : aiLevel
+	})
+	const isHuman = uid => CONTROLLER[uid] === 'human'
+
 	let running = true
 	let paused = false
 	let map
 	let ships
 	let turns = 0
 	let cancelHuman = null
+	let pendingHumanUid = null
 	const aiRng = mulberry32(0xa1b2 ^ Date.now() >>> 0) // AI 블런더/노이즈용 (매판 다른 변주)
 
 	const el = div('scene', `
 		<div class="play-top">
-			<span class="sub">${stageData.name[getLang()] ?? stageData.name.en} · ${difficulty.toUpperCase()}${aiLevel !== difficulty ? ` · AI ${aiLevel.toUpperCase()}` : ''}</span>
+			<span class="sub">${stageData.name[getLang()] ?? stageData.name.en}${mode === 'local' ? '' : ` · ${difficulty.toUpperCase()}${aiLevel !== difficulty ? ` · AI ${aiLevel.toUpperCase()}` : ''}`}</span>
 			<div class="play-hud">
 				${VIEW_TEAMS.map((tm, i) => `
 					${i > 0 ? '<span class="sub">:</span>' : ''}
 					<span class="cell badge" data-owner="${tm}" style="width:1.1em;height:1.1em;display:inline-block;${TEAM_HUE[tm] ? `filter:hue-rotate(${TEAM_HUE[tm]}deg)` : ''}"></span>
-					<span class="num" data-score="${tm}">00</span>`).join('')}
+					<span class="num" data-score="${tm}">00</span>
+					<span class="sub ai-tag" data-ai-tag="${tm}" style="font-size:.65em;${isHuman(ENGINE_TEAMS[i]) ? 'visibility:hidden' : ''}">AI</span>`).join('')}
 				<button class="btn" data-act="pause" style="font-size:1rem;padding:.1em .5em">⏸</button>
 			</div>
 		</div>
@@ -189,23 +204,24 @@ export function playScene(ctx) {
 			t.querySelector('.preview')?.remove()
 		})
 	}
-	function markSelectable() {
+	function markSelectable(myView) {
 		ROWS.forEach((r, y) => { for (let x = 0; x < W; x++) {
-			tileEl(`${r}${x}`).classList.toggle('selectable', ownerTeam(map.fields[y][x]) === 'p1')
+			tileEl(`${r}${x}`).classList.toggle('selectable', ownerTeam(map.fields[y][x]) === myView)
 		} })
 	}
 
-	// ---- human 턴 ----
-	function humanTurn() {
+	// ---- human 턴 (uid = 지금 두는 사람의 엔진 팀) ----
+	function humanTurn(uid) {
+		const myView = viewOf(uid)
 		return new Promise(resolve => {
 			let source = null
-			markSelectable()
+			markSelectable(myView)
 
 			const showLegal = () => {
-				for (const m of map.legalMovesFrom(HUMAN, source)) {
+				for (const m of map.legalMovesFrom(uid, source)) {
 					const lt = tileEl(posStr(m))
 					lt.classList.add('legal')
-					lt.dataset.ownerHint = 'p1'
+					lt.dataset.ownerHint = myView
 					lt.dataset.moveType = m.type === STATE.ATTACK.MOVE ? 'move' : 'clone'
 				}
 			}
@@ -214,16 +230,18 @@ export function playScene(ctx) {
 				board.removeEventListener('pointerover', onOver)
 				board.removeEventListener('pointerout', onOut)
 				cancelHuman = null
+				pendingHumanUid = null
 				resolve(out)
 			}
 			cancelHuman = () => finish(null)
+			pendingHumanUid = uid
 
 			function onBoardClick(e) {
 				const t = e.target.closest('.tile')
 				if (!t || paused) return
 				const { x, y } = posToXY(t.dataset.pos)
-				if (ownerTeam(map.fields[y][x]) === 'p1') { // 소스 (재)선택
-					clearHints(); markSelectable()
+				if (ownerTeam(map.fields[y][x]) === myView) { // 소스 (재)선택
+					clearHints(); markSelectable(myView)
 					source = { x, y }
 					t.classList.add('selected')
 					playSfx('sfx-select')
@@ -232,7 +250,7 @@ export function playScene(ctx) {
 					finish({ from: source, to: { x, y } })
 				} else { // 빈 곳 = 선택 해제
 					if (source) playSfx('sfx-invalid') // 소스 선택 상태에서 비합법 타겟 시도
-					clearHints(); markSelectable(); source = null
+					clearHints(); markSelectable(myView); source = null
 				}
 			}
 			function onOver(e) {
@@ -255,6 +273,23 @@ export function playScene(ctx) {
 		})
 	}
 
+	// 로컬 핫싯 전환 화면 — 명시적 탭 전까지 board 리스너 자체가 안 붙어 오터치를 원천 차단한다.
+	function passOverlay(uid) {
+		return new Promise(resolve => {
+			const myView = viewOf(uid)
+			const ov = div('pass-overlay', `
+				<span class="cell badge" data-owner="${myView}" style="width:1.6em;height:1.6em;display:inline-block;${TEAM_HUE[myView] ? `filter:hue-rotate(${TEAM_HUE[myView]}deg)` : ''}"></span>
+				<div class="logo">${t('play.passTitle', { name: playerLabel(uid) })}</div>
+				<div class="sub">${t('play.passHint')}</div>
+				<button class="btn primary" data-p="ready">${t('play.passReady')}</button>
+			`)
+			const finish = () => { ov.remove(); cancelHuman = null; playSfx('sfx-select'); resolve() }
+			cancelHuman = finish
+			onClick(ov, 'data-p', finish)
+			el.appendChild(ov)
+		})
+	}
+
 	async function execMove(team, userId, from, to) {
 		const legal = map.legalMovesFrom(userId, from).find(m => m.x === to.x && m.y === to.y)
 		const fromPos = posStr(from), toPos = posStr(to)
@@ -274,6 +309,12 @@ export function playScene(ctx) {
 			})
 		}
 		postMove(before, toPos) // 감염 뒤집기 애니 + 점령 마을 파괴
+	}
+
+	async function playAiMove(uid) {
+		await sleep(450)
+		const mv = pickMove(map, uid, AI_LEVEL[uid], aiRng)
+		if (mv) await execMove(viewOf(uid), uid, mv.from, mv.to)
 	}
 
 	// 자동 마무리 — 인터랙션 차단, CLONE 만(빈칸 단조 감소 → 타팀 부활 불가) 순차 채움
@@ -304,9 +345,17 @@ export function playScene(ctx) {
 	function finishGame() {
 		running = false
 		clearHints()
+		if (mode === 'local') {
+			const winnerUid = map.winner()
+			const ranking = ENGINE_TEAMS
+				.map(uid => ({ team: viewOf(uid), name: playerLabel(uid), cells: map.count[uid], controller: CONTROLLER[uid] }))
+				.sort((a, b) => b.cells - a.cells)
+			ctx.go('result', { mode, stage, difficulty, turns, ranking, winnerTeam: winnerUid ? viewOf(winnerUid) : null, players })
+			return
+		}
 		const own = map.count[HUMAN]
 		const enemy = Math.max(...ENGINE_TEAMS.filter(u => u !== HUMAN).map(u => map.count[u]))
-		ctx.go('result', { stage, difficulty, result: map.winner() === HUMAN ? 'win' : 'lose', own, enemy, turns })
+		ctx.go('result', { mode, stage, difficulty, result: map.winner() === HUMAN ? 'win' : 'lose', own, enemy, turns })
 	}
 
 	async function turnLoop() {
@@ -340,17 +389,28 @@ export function playScene(ctx) {
 			}
 			stall = 0
 
-			turnEl.textContent = cur === HUMAN ? t('play.yourTurn') : t('play.aiTurn')
-			if (cur === HUMAN) playSfx('sfx-turn') // "내 차례" 알림음 (AI 턴은 무음 — N:N 스팸 방지)
-			if (cur === HUMAN) {
-				const mv = await humanTurn()
-				if (!running || !mv) return
-				clearHints()
-				await execMove(viewOf(cur), cur, mv.from, mv.to)
+			const humanNow = isHuman(cur)
+			turnEl.textContent = humanNow
+				? (mode === 'local' ? t('play.localTurn', { name: playerLabel(cur) }) : t('play.yourTurn'))
+				: (mode === 'local' ? t('play.aiThink', { name: playerLabel(cur) }) : t('play.aiTurn'))
+			if (humanNow) playSfx('sfx-turn') // "내 차례" 알림음 (AI 좌석은 무음 — N:N/AI 스팸 방지, 사람 좌석은 전부 재생)
+			if (humanNow) {
+				if (mode === 'local' && ENGINE_TEAMS.filter(isHuman).length > 1) {
+					await passOverlay(cur) // 로컬 핫싯: 기기를 넘기는 확인 화면 — 탭 전까지 board 리스너 미부착
+					if (!running) return
+				}
+				const mv = await humanTurn(cur)
+				if (!running) return
+				if (mv) {
+					clearHints()
+					await execMove(viewOf(cur), cur, mv.from, mv.to)
+				} else if (isHuman(cur)) {
+					return // 진짜 취소(quit 등) — 컨트롤러 그대로 사람인데 수가 없음 = 씬 파괴
+				} else {
+					await playAiMove(cur) // 대기 중 기권(→AI) 발생 → 같은 턴을 AI가 즉시 대신 둠
+				}
 			} else {
-				await sleep(450)
-				const mv = pickMove(map, cur, aiLevel, aiRng)
-				if (mv) await execMove(viewOf(cur), cur, mv.from, mv.to)
+				await playAiMove(cur)
 			}
 			turns++
 		}
@@ -358,16 +418,31 @@ export function playScene(ctx) {
 	turnLoop()
 
 	function openPause() {
+		// 로컬 대전 중인 사람 좌석만 기권(→ AI easy 대타) 옵션 노출
+		const forfeitRow = mode === 'local' && ENGINE_TEAMS.some(isHuman)
+			? `<div class="btn-row">${ENGINE_TEAMS.filter(isHuman).map(uid =>
+				`<button class="btn" data-forfeit="${uid}">${t('play.forfeitSeat', { name: playerLabel(uid) })}</button>`).join('')}</div>`
+			: ''
 		const ov = div('pause-overlay', `
 			<div class="logo">${t('play.paused')}</div>
 			<button class="btn primary" data-p="resume">${t('play.resume')}</button>
 			<button class="btn" data-p="settings">${t('play.settings')}</button>
+			${forfeitRow}
 			<button class="btn" data-p="quit">${t('play.quit')}</button>
 		`)
 		onClick(ov, 'data-p', p => {
 			if (p === 'resume') { paused = false; ov.remove() }
 			else if (p === 'settings') ctx.go('settings')
-			else if (p === 'quit') ctx.go('stage-select', { difficulty })
+			else if (p === 'quit') ctx.go('stage-select', { difficulty, mode })
+		})
+		onClick(ov, 'data-forfeit', uid => {
+			CONTROLLER[uid] = 'ai'
+			AI_LEVEL[uid] = 'easy'
+			const tag = el.querySelector(`[data-ai-tag="${viewOf(uid)}"]`)
+			if (tag) tag.style.visibility = 'visible'
+			paused = false
+			ov.remove()
+			if (pendingHumanUid === uid) cancelHuman?.() // 지금 이 좌석 차례 대기 중이면 즉시 AI로 넘김
 		})
 		el.appendChild(ov)
 	}

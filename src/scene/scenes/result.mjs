@@ -11,7 +11,9 @@ const NEXT = { easy: 'normal', normal: 'hard', hard: null }
 const PREV = { hard: 'normal', normal: 'easy', easy: null }
 
 export function resultScene(ctx) {
-	const { result = 'win', stage = 'stage-01', difficulty = 'normal', own = 0, enemy = 0, turns = 0 } = ctx.params
+	const { mode = 'pve', result = 'win', stage = 'stage-01', difficulty = 'normal', own = 0, enemy = 0, turns = 0, ranking = [], winnerTeam: localWinnerTeam = null, players } = ctx.params
+	if (mode === 'local') return localResultScene(ctx, { stage, difficulty, turns, ranking, winnerTeam: localWinnerTeam, players })
+
 	const win = result === 'win'
 	const parTurns = STAGES[stage]?.parTurns ?? 20
 
@@ -54,6 +56,41 @@ export function resultScene(ctx) {
 		else if (act === 'harder') ctx.go('play', { stage, difficulty: NEXT[difficulty] })
 		else if (act === 'easier') ctx.go('play', { stage, difficulty: PREV[difficulty] })
 		else if (act === 'select') ctx.go('stage-select', { difficulty })
+	})
+	return { el }
+}
+
+// Local PvP 결과 — 순위(칸수 내림차순) + 무승부(공동 1위, map.winner()===null) 분기.
+function localResultScene(ctx, { stage, difficulty, turns, ranking, winnerTeam, players }) {
+	const draw = !winnerTeam
+	const winner = ranking.find(r => r.team === winnerTeam)
+
+	const el = div('scene', `
+		${draw ? '' : `<div class="cell result-badge" data-owner="${winnerTeam}"></div>`}
+		<div class="result-head ${draw ? '' : 'win'}">${draw ? t('result.draw') : t('result.localWin', { name: winner.name })}</div>
+		<div class="card">
+			${ranking.map((r, i) => `
+				<div class="rank-row">
+					<span><span class="num">${i + 1}.</span>
+						<span class="cell badge" data-owner="${r.team}" style="width:1em;height:1em;display:inline-block;vertical-align:middle;margin:0 .3em"></span>
+						${r.name}${r.controller === 'ai' ? ` <span class="sub">(AI)</span>` : ''}</span>
+					<span class="num">${r.cells}</span>
+				</div>`).join('')}
+			<div class="sub">${turns} ${t('result.turns')}</div>
+		</div>
+		<div class="btn-col">
+			<button class="btn primary" data-act="rematch">${t('result.rematch')}</button>
+			<button class="btn" data-act="seats">${t('result.changeSeats')}</button>
+			<button class="btn" data-act="select">${t('result.select')}</button>
+		</div>
+	`)
+
+	playSfx('jingle-win') // 승자 있든 무승부든 대칭 대전이라 패배 톤은 부적합 — win 징글로 통일
+
+	onClick(el, 'data-act', act => {
+		if (act === 'rematch') ctx.go('play', { stage, difficulty, mode: 'local', players })
+		else if (act === 'seats') ctx.go('seats', { stage, difficulty, players })
+		else if (act === 'select') ctx.go('stage-select', { difficulty, mode: 'local' })
 	})
 	return { el }
 }
