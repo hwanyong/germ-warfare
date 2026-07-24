@@ -1,6 +1,8 @@
 // 다국어(i18n) — 기본 영어(en), 한국어(ko). localStorage 저장.
 // t(key) 로 번역. 씬은 마운트마다 t() 를 읽으므로 언어 변경 후 재진입 시 반영.
 
+import { warmFonts } from '../loading/preload.mjs'
+
 const DICT = {
 	en: {
 		'loading': 'LOADING',
@@ -56,10 +58,17 @@ const KEY = 'gw-lang'
 let lang = (typeof localStorage !== 'undefined' && localStorage.getItem(KEY)) || 'en'
 document.documentElement.lang = lang
 
+// 현재 언어 사전 전체 글리프 예열 — 게임 중 첫 등장 텍스트(hover 배지 등)가
+// 폰트 서브셋 지연로드 → 문서 전체 재페인트를 일으키지 않게 한다 (preload.warmFonts 참조).
+// 스테이지명(data/stages.mjs)은 씬 마운트 시점에 삽입되어 자체 예열되므로 제외.
+const warmLangFonts = () => warmFonts(Object.values(DICT[lang]).join(''))
+document.fonts?.ready.then(warmLangFonts) // 부팅: @font-face 등록 완료 후 1회
+
 export function getLang() { return lang }
 export function setLang(l) {
 	lang = (l === 'ko') ? 'ko' : 'en'
 	localStorage.setItem(KEY, lang)
 	document.documentElement.lang = lang
+	warmLangFonts()
 }
 export function t(k) { return DICT[lang]?.[k] ?? DICT.en[k] ?? k }
