@@ -50,12 +50,11 @@
 
 .tile {
 	position: relative;
-	/* layout containment — 칸별 stacking context 로 페인트 무효화를 칸 안에 가둔다.
-	 * (paint containment 는 안 쓴다 — inset:-12% 로 칸 밖까지 삐져나오는 파괴버스트/선택
-	 * 브래킷을 잘라버림. layout 은 오버플로우를 안 자르면서 같은 격리 효과를 준다.)
-	 * 미격리 시 .cell 의 z-index 가 보드 전역 페인트 순서에 섞여, hover 프리뷰 1회 삽입에
-	 * 보드 49칸 전체 + 점수 패널까지 재페인트(suffix invalidation)되어 깜빡임이 발생했다. */
-	contain: layout;
+	/* stacking-context 격리(isolation/contain 어느 쪽이든) 시도했으나 전부 Safari 에서
+	 * 같은 요소의 border-image(frame-thin) 렌더링을 지워버림(유저 실기기 확인 2회).
+	 * .tile 자체에는 stacking-context 를 만드는 속성을 절대 걸지 않는다.
+	 * 호버 storm 시 보드 전체 재페인트되는 문제는 미해결 상태 — 재작업 시 border-image 를
+	 * .tile 밖(별도 자식 요소)으로 분리해 그 자식에만 격리를 거는 방향 검토. */
 	aspect-ratio: 1;
 	display: grid;
 	place-items: center;
