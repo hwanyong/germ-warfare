@@ -85,7 +85,26 @@ mascot/germ-{green,pink}.webp
 > 데모(`main.mjs`)가 이 애니를 셀프플레이로 시연. P0의 `src/render`/`src/match` 가
 > 클릭 인터랙션에 `playMove` 를 연결한다(합법수 hover=crosshair → 클릭 → playMove → setField).
 
-## 8. 미래 폴리시 (선택)
+## 8. 사운드 (구현됨 — src/audio, ADR-009)
+
+톤 = **카툰 + 레트로 SF 혼합**(손그림 아이덴티티의 청각판). ElevenLabs 생성,
+`public/assets/audio/` 12종(~1.8MB), 전부 `src/audio/manifest.mjs` 등록(SSOT). 전 항목 배선 완료:
+
+| 에셋 | 트리거 (배선 지점) |
+|---|---|
+| `bgm-battle` | 첫 유효 제스처 시 시작(main.mjs `unlockOnGesture`), 갭리스 루프 |
+| `sfx-launch/laser/impact` | `playMove`/`playJump` onPhase — 귀환은 launch 저피치, 트랙터빔은 laser 저피치 재활용 |
+| `sfx-spawn` / `sfx-infect` | play 씬 onImpact/onDrop 생성 pop / postMove 뒤집기 diff>0 시 1회 |
+| `sfx-select` / `sfx-invalid` | play 씬 소스 세균 선택 / 소스 선택 상태에서 비합법 타겟 클릭 |
+| `sfx-turn` | play 씬 내 턴 시작(AI 턴 무음 — N:N 스팸 방지) |
+| `sfx-button` | 전 씬 `.btn` 클릭(document 위임 1곳, main.mjs) |
+| `jingle-win` / `jingle-lose` | result 씬 마운트 시 승/패 분기 |
+
+사운드 켬/끔 = 설정 씬(`settings.sound`), localStorage `gw-settings`
+(`src/storage/settings.mjs`). menu 전용 BGM 은 미정(현 BGM 이 전 씬 공용).
+튜토리얼 미니보드는 fx 파이프 미사용이라 범위 밖. `prefers-reduced-motion` 과 비커플링 — ADR-009.
+
+## 9. 미래 폴리시 (선택)
 
 - CSS 커서 → 그림자 포함 애니 div 커서(기존 방식) 승격.
 - 축 라벨(A–G / 0–6) 재도입.

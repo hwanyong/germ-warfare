@@ -9,6 +9,18 @@ import { gridMoves } from '../../game/map.mjs'
 import { STAGES } from '../../data/stages.mjs'
 import { isTutorialDone } from '../../storage/progress.mjs'
 import { t, getLang } from '../../i18n/index.mjs'
+import { playSfx } from '../../audio/audio.mjs'
+
+// FX 단계 → 사운드 (playMove/playJump 공용). 귀환·트랙터빔은 기존 소리 변조 재활용.
+const PHASE_SFX = {
+	launch: () => playSfx('sfx-launch'),
+	laser: () => playSfx('sfx-laser'),
+	pickup: () => playSfx('sfx-laser', { rate: 0.8, gain: 0.8 }),
+	impact: () => playSfx('sfx-impact'),
+	drop: () => playSfx('sfx-impact'),
+	return: () => playSfx('sfx-launch', { rate: 0.85, gain: 0.5 })
+}
+const phaseSfx = p => PHASE_SFX[p]?.()
 
 const CARTO = '/germ-warfare/assets/cartography'
 const ALL_ENGINE_TEAMS = [USERS.ID0, USERS.ID1, 'USER2', 'USER3'] // N:N 프리포올 최대 4팀
@@ -114,15 +126,17 @@ export function playScene(ctx) {
 			{ duration: 400, easing: 'ease-out' }
 		)
 	}
-	// 이동/생성 후: 뒤집힌 칸 애니 + 점령된 마을 파괴
+	// 이동/생성 후: 뒤집힌 칸 애니 + 점령된 마을 파괴 (+감염 시 감염음 1회)
 	function postMove(before, exclude) {
+		let flipped = 0
 		ROWS.forEach((r, y) => { for (let x = 0; x < W; x++) {
 			const pos = `${r}${x}`
 			const now = map.fields[y][x]
 			const was = before[y][x]
-			if (now && was && now !== was && pos !== exclude) flipAnim(pos) // 감염 뒤집기
+			if (now && was && now !== was && pos !== exclude) { flipAnim(pos); flipped++ } // 감염 뒤집기
 			if (now && buildings[pos] && !buildings[pos].destroyed) destroyBuilding(pos) // 점령 파괴
 		} })
+		if (flipped) playSfx('sfx-infect')
 	}
 
 	function syncTile(pos, { pop = false } = {}) {
@@ -212,10 +226,12 @@ export function playScene(ctx) {
 					clearHints(); markSelectable()
 					source = { x, y }
 					t.classList.add('selected')
+					playSfx('sfx-select')
 					showLegal()
 				} else if (source && t.classList.contains('legal')) { // 실행
 					finish({ from: source, to: { x, y } })
 				} else { // 빈 곳 = 선택 해제
+					if (source) playSfx('sfx-invalid') // 소스 선택 상태에서 비합법 타겟 시도
 					clearHints(); markSelectable(); source = null
 				}
 			}
@@ -246,13 +262,15 @@ export function playScene(ctx) {
 		if (legal.type === STATE.ATTACK.MOVE) {
 			await playJump(board, ships[team], {
 				fromPos, toPos,
+				onPhase: phaseSfx,
 				onPickup: () => { tileEl(fromPos).querySelector('.cell')?.remove() },
-				onDrop: () => { map.applyMove(userId, from, to); syncTile(toPos, { pop: true }); syncAll() }
+				onDrop: () => { map.applyMove(userId, from, to); playSfx('sfx-spawn'); syncTile(toPos, { pop: true }); syncAll() }
 			})
 		} else {
 			await playMove(board, ships[team], {
 				pos: toPos,
-				onImpact: () => { map.applyMove(userId, from, to); syncTile(toPos, { pop: true }); syncAll() }
+				onPhase: phaseSfx,
+				onImpact: () => { map.applyMove(userId, from, to); playSfx('sfx-spawn'); syncTile(toPos, { pop: true }); syncAll() }
 			})
 		}
 		postMove(before, toPos) // 감염 뒤집기 애니 + 점령 마을 파괴
@@ -275,7 +293,7 @@ export function playScene(ctx) {
 			const before = map.fields.map(r => r.slice())
 			await playQuickFill(board, ship, {
 				pos: posStr(mv.to),
-				onImpact: () => { map.applyMove(filler, mv.from, mv.to); syncTile(posStr(mv.to), { pop: true }); syncAll() }
+				onImpact: () => { map.applyMove(filler, mv.from, mv.to); playSfx('sfx-spawn', { gain: 0.6, rate: 1.1 }); syncTile(posStr(mv.to), { pop: true }); syncAll() }
 			})
 			postMove(before, posStr(mv.to))
 		}
@@ -323,6 +341,7 @@ export function playScene(ctx) {
 			stall = 0
 
 			turnEl.textContent = cur === HUMAN ? t('play.yourTurn') : t('play.aiTurn')
+			if (cur === HUMAN) playSfx('sfx-turn') // "내 차례" 알림음 (AI 턴은 무음 — N:N 스팸 방지)
 			if (cur === HUMAN) {
 				const mv = await humanTurn()
 				if (!running || !mv) return

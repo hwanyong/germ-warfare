@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>viewport harness (temp — git 미추적, 조사 후 삭제)</title>
+<style>
+	html, body { margin: 0; background: #1e1e1e; }
+	#frame { border: 0; outline: 2px solid #f0f; background: #fff; display: block; margin: 24px 0 0 8px; transform-origin: top left; }
+	#label { position: fixed; left: 8px; top: 2px; color: #0f0; font: 13px monospace; z-index: 9; }
+</style>
+</head>
+<body>
+<div id="label"></div>
+<iframe id="frame" src="/germ-warfare/"></iframe>
+<script>
+	const f = document.getElementById('frame')
+	const l = document.getElementById('label')
+	window.setVP = (w, h, scale = 1) => {
+		f.style.width = w + 'px'
+		f.style.height = h + 'px'
+		f.style.transform = scale === 1 ? '' : `scale(${scale})`
+		l.textContent = `${w}×${h} @${scale}`
+	}
+	const p = new URLSearchParams(location.search)
+	setVP(+p.get('w') || 375, +p.get('h') || 667, +p.get('s') || 1)
+</script>
+</body>
+</html>

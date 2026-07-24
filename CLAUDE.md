@@ -17,6 +17,7 @@
 - **이식 자산**(`src/game`, `src/ai`, `src/render`)은 순수·클린 유지 — 미래 멀티플레이 앱이 재사용(ADR-005).
 - 에셋은 `public/assets/`. 활성(배선) 에셋은 린하게, 배경/이펙트 라이브러리(cartography 등)는 별도 보관.
   **에셋 고를 땐 이미지 재분석 말고 [`docs/assets.md`](docs/assets.md) 카탈로그 참조**(114개 상세 묘사·구별점).
+- 오디오 에셋(`public/assets/audio/`)은 **`src/audio/manifest.mjs` 등록 필수** (ADR-009).
 
 ## 배포
 

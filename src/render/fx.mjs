@@ -152,9 +152,10 @@ export async function mountShips(board, teams = ['p1', 'p2']) {
  * 한 수 애니메이션 — 캐릭터(Ship) 기준.
  * @param {HTMLElement} board - .board (position:relative, .fx-layer 포함)
  * @param {Ship} ship - 발사 주체 캐릭터
- * @param {{pos:string, onImpact?:Function}} opts - pos = "A0"..
+ * @param {{pos:string, onImpact?:Function, onPhase?:Function}} opts - pos = "A0"..
+ *   onPhase('launch'|'laser'|'impact'|'return') — 단계 시작 알림(사운드 등 외부 동기화용, render 는 소비처 무지)
  */
-export async function playMove(board, ship, { pos, onImpact }) {
+export async function playMove(board, ship, { pos, onImpact, onPhase }) {
 	const layer = board.querySelector('.fx-layer')
 	const tile = board.querySelector(`.tile[data-pos="${pos}"]`)
 	if (!ship || !tile) { onImpact?.(); return }
@@ -167,9 +168,11 @@ export async function playMove(board, ship, { pos, onImpact }) {
 	const airY = cyTop - t.height * 1.1 + ship.h / 2 - FIRE_LIFT // 셀 위 "공중"
 
 	// 1) 타겟 상공으로 이동
+	onPhase?.('launch')
 	await ship.moveTo(cx, airY, 460)
 
 	// 2) 발사 — 전부 캐릭터의 발사구(muzzle) 기준 (위치·크기 오프셋)
+	onPhase?.('laser')
 	const m = ship.muzzle()
 	const beamH = Math.max(cyCenter - m.y, 0)
 
@@ -193,12 +196,14 @@ export async function playMove(board, ship, { pos, onImpact }) {
 	await wait(150)
 
 	// 3) 착탄 → burst(대칭, 셀 중앙) + 플래시 + 세균 생성
+	onPhase?.('impact')
 	spark(layer, ship.team, cx, cyCenter)
 	impactFlash(layer, ship.team, cx, cyCenter)
 	onImpact?.()
 	await wait(130)
 
 	// 4) 귀환
+	onPhase?.('return')
 	await ship.moveTo(ship.home.x, ship.home.y, 460)
 }
 
@@ -257,9 +262,10 @@ export async function shipHome(ship) {
 
 /**
  * MOVE(점프) 애니 — 우주선이 소스 세균을 수거해 타겟으로 운반 후 생성.
- * @param {{fromPos, toPos, onPickup?, onDrop?}} opts
+ * @param {{fromPos, toPos, onPickup?, onDrop?, onPhase?}} opts
+ *   onPhase('launch'|'pickup'|'carry'|'drop'|'return') — 단계 시작 알림
  */
-export async function playJump(board, ship, { fromPos, toPos, onPickup, onDrop }) {
+export async function playJump(board, ship, { fromPos, toPos, onPickup, onDrop, onPhase }) {
 	const layer = board.querySelector('.fx-layer')
 	if (!ship || !board.querySelector(`.tile[data-pos="${fromPos}"]`) || !board.querySelector(`.tile[data-pos="${toPos}"]`)) {
 		onPickup?.(); onDrop?.(); return
@@ -269,9 +275,11 @@ export async function playJump(board, ship, { fromPos, toPos, onPickup, onDrop }
 	const airOf = m => m.top - m.h * 1.1 + ship.h / 2 - FIRE_LIFT
 
 	// 1) 소스 상공으로
+	onPhase?.('launch')
 	await ship.moveTo(F.cx, airOf(F), 420)
 
 	// 2) 트랙터 빔 + 수거 스파크 → 소스 제거, 배에 미니 세균 부착
+	onPhase?.('pickup')
 	const mz = ship.muzzle()
 	const beam = el('div', 'laser-beam')
 	beam.dataset.team = ship.team
@@ -296,12 +304,14 @@ export async function playJump(board, ship, { fromPos, toPos, onPickup, onDrop }
 	await wait(140)
 
 	// 3) 운반 — 배 + 미니 세균 동시에 타겟 상공으로
+	onPhase?.('carry')
 	await Promise.all([
 		ship.moveTo(T.cx, airOf(T), 520),
 		translateTo(mini, T.cx, cargoY(T), 520)
 	])
 
 	// 4) 투하 — 미니 제거, 타겟 생성 + 스파크/플래시
+	onPhase?.('drop')
 	mini.remove()
 	spark(layer, ship.team, T.cx, T.cy)
 	impactFlash(layer, ship.team, T.cx, T.cy)
@@ -309,5 +319,6 @@ export async function playJump(board, ship, { fromPos, toPos, onPickup, onDrop }
 	await wait(130)
 
 	// 5) 귀환
+	onPhase?.('return')
 	await ship.moveTo(ship.home.x, ship.home.y, 460)
 }

@@ -5,6 +5,7 @@ import { div, onClick } from '../dom.mjs'
 import { STAGES, STAGE_ORDER } from '../../data/stages.mjs'
 import { computeScore, recordPlay } from '../../storage/progress.mjs'
 import { t } from '../../i18n/index.mjs'
+import { playSfx } from '../../audio/audio.mjs'
 
 const NEXT = { easy: 'normal', normal: 'hard', hard: null }
 const PREV = { hard: 'normal', normal: 'easy', easy: null }
@@ -42,6 +43,8 @@ export function resultScene(ctx) {
 		</div>
 		<div class="btn-col">${buttons}</div>
 	`)
+
+	playSfx(win ? 'jingle-win' : 'jingle-lose') // 결과 징글 (BGM 위에 얹힘)
 
 	// TODO(F): result → 복귀 사이 광고 슬롯 훅
 

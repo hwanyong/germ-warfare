@@ -9,6 +9,7 @@ import './styles/scene.css'
 import { CRITICAL_IMAGES, DEFERRED_IMAGES } from './loading/assets.mjs'
 import { preloadAll, preloadInBackground } from './loading/preload.mjs'
 import { createManager } from './scene/index.mjs'
+import { installAudio, unlockOnGesture, playSfx, playBgm } from './audio/audio.mjs'
 
 async function boot() {
 	const pctEl = document.getElementById('load-pct')
@@ -23,6 +24,7 @@ async function boot() {
 	})
 
 	const manager = createManager(document.getElementById('app'))
+	window.__gw = manager // TEMP: 반응형 조사용 씬 점프 훅 — 조사 종료 시 제거
 	manager.go('title')
 
 	loadingEl?.classList.add('done')
@@ -30,6 +32,13 @@ async function boot() {
 
 	// 2) 나머지 게임 자산은 백그라운드로 (메뉴 보는 동안 로드)
 	preloadInBackground(DEFERRED_IMAGES)
+
+	// 3) 오디오 — 프리로드는 백그라운드(fetch/decode 는 suspended 에서도 동작),
+	//    BGM 은 첫 유효 제스처에서 시작(자동재생 정책, ADR-009)
+	installAudio()
+	unlockOnGesture(() => playBgm('bgm-battle'))
+	// 전 씬 공통 버튼음 — 모든 버튼이 .btn 클래스라 문서 위임 1곳으로 배선
+	document.addEventListener('click', e => { if (e.target.closest('.btn')) playSfx('sfx-button') })
 }
 
 boot()
