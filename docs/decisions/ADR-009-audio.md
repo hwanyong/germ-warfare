@@ -29,6 +29,9 @@
    `bgm-main`(play/result 제외 전 씬) / `bgm-battle`(play 전용) / result 는 BGM 무음(징글만).
    매핑은 SceneManager `onEnter` 훅(매니저는 소비처 무지) + main.mjs `SCENE_BGM` 이 SSOT.
    전환은 페이드아웃(0.1s tc)/페이드인(0.4s) 교체. 튜토리얼 미니보드는 fx 파이프 미사용이라 범위 밖.
+   *추기(2026-07-24)*: 전투 BGM 3곡으로 확장 — 씬 진입곡은 여전히 `SCENE_BGM`(`bgm-battle`),
+   플레이 중 실시간 우세/열세 교체(`bgm-battle-up/down`, 칸 ≥1/2 점유)는 게임 상태 소관이라
+   **play 씬 `syncBattleBgm` 이 담당**. 씬 간 매핑 SSOT(main.mjs) / 씬 내 상태 반응(play) 분리.
 5. **감염음은 보드 스냅샷 diff 로 판정** — 엔진 `events.infected` 는 감염 0건에도
    발화하고 페이로드가 없어 부적합. play 씬 `postMove` 의 전후 필드 비교(뒤집힌 칸
    카운트)로 실제 감염 시에만 1회 재생.

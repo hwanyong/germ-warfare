@@ -25,8 +25,9 @@ export function settingsScene(ctx) {
 			<button class="btn" data-act="credits">${t('settings.credits')}</button>
 		</div>
 	`)
-	onClick(el, 'data-lang', l => { setLang(l); ctx.go('settings') }) // 언어 변경 → 재마운트
-	onClick(el, 'data-sound', v => { resumeAudio(); setMuted(v === 'off'); ctx.go('settings') }) // resumeAudio = iOS 인터럽션 복구 겸
+	// 재마운트는 replace — go() 는 스택에 settings 를 중복 push 해 back 이 제자리걸음(즉각 복귀 안 되는 버그)
+	onClick(el, 'data-lang', l => { setLang(l); ctx.replace('settings') }) // 언어 변경 → 재마운트
+	onClick(el, 'data-sound', v => { resumeAudio(); setMuted(v === 'off'); ctx.replace('settings') }) // resumeAudio = iOS 인터럽션 복구 겸
 	onClick(el, 'data-act', act => {
 		if (act === 'back') ctx.back()
 		else if (act === 'tutorial') ctx.go('tutorial', {})

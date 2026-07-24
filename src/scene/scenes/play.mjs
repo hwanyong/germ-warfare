@@ -9,7 +9,8 @@ import { gridMoves } from '../../game/map.mjs'
 import { STAGES } from '../../data/stages.mjs'
 import { isTutorialDone } from '../../storage/progress.mjs'
 import { t, getLang } from '../../i18n/index.mjs'
-import { playSfx } from '../../audio/audio.mjs'
+import { playSfx, playBgm } from '../../audio/audio.mjs'
+import { mascotSrc, frozenMascot } from '../mascot.mjs'
 
 // FX 단계 → 사운드 (playMove/playJump 공용). 귀환·트랙터빔은 기존 소리 변조 재활용.
 const PHASE_SFX = {
@@ -20,7 +21,6 @@ const PHASE_SFX = {
 	drop: () => playSfx('sfx-impact'),
 	return: () => playSfx('sfx-launch', { rate: 0.85, gain: 0.5 })
 }
-const phaseSfx = p => PHASE_SFX[p]?.()
 
 const CARTO = '/germ-warfare/assets/cartography'
 const ALL_ENGINE_TEAMS = [USERS.ID0, USERS.ID1, 'USER2', 'USER3'] // N:N 프리포올 최대 4팀
@@ -72,19 +72,16 @@ export function playScene(ctx) {
 	let turns = 0
 	let cancelHuman = null
 	let pendingHumanUid = null
+	// 씬 사후 발음 차단 — cleanup(씬 전환) 후에도 인플라이트 애니/AI 수의 await 연속은
+	// 끝까지 실행되므로, 사운드·BGM 방출은 전부 running 게이트를 거쳐야 새 씬 오디오를 안 덮는다.
+	const phaseSfx = p => { if (running) PHASE_SFX[p]?.() }
+	const sfx = (...args) => { if (running) playSfx(...args) }
 	const aiRng = mulberry32(0xa1b2 ^ Date.now() >>> 0) // AI 블런더/노이즈용 (매판 다른 변주)
 
 	const el = div('scene', `
 		<div class="play-top">
 			<span class="sub">${stageData.name[getLang()] ?? stageData.name.en}${mode === 'local' ? '' : ` · ${difficulty.toUpperCase()}${aiLevel !== difficulty ? ` · AI ${aiLevel.toUpperCase()}` : ''}`}</span>
-			<div class="play-hud">
-				${VIEW_TEAMS.map((tm, i) => `
-					${i > 0 ? '<span class="sub">:</span>' : ''}
-					<span class="cell badge" data-owner="${tm}" style="width:1.1em;height:1.1em;display:inline-block;${TEAM_HUE[tm] ? `filter:hue-rotate(${TEAM_HUE[tm]}deg)` : ''}"></span>
-					<span class="num" data-score="${tm}">00</span>
-					<span class="sub ai-tag" data-ai-tag="${tm}" style="font-size:.65em;${isHuman(ENGINE_TEAMS[i]) ? 'visibility:hidden' : ''}">AI</span>`).join('')}
-				<button class="btn" data-act="pause" style="font-size:1rem;padding:.1em .5em">⏸</button>
-			</div>
+			<button class="btn" data-act="pause" style="font-size:1rem;padding:.1em .5em;letter-spacing:.1em">II</button>
 		</div>
 		<div class="turn-label" id="turn"></div>
 		<div class="board" id="board" style="grid-template-columns:repeat(${W},1fr);grid-template-rows:repeat(${H},1fr);aspect-ratio:${W}/${H};--ar:${(W / H).toFixed(4)}">
@@ -94,11 +91,46 @@ export function playScene(ctx) {
 					: `<div class="tile frame-thin" data-pos="${r}${x}"></div>`).join('')).join('')}
 			<div class="fx-layer"></div>
 		</div>
+		<div class="score-panel">
+			${VIEW_TEAMS.map((tm, i) => `
+				<div class="score-chip" data-chip="${tm}">
+					<img class="mascot" data-mascot="${tm}" src="${mascotSrc(tm)}" alt=""${TEAM_HUE[tm] ? ` style="filter:hue-rotate(${TEAM_HUE[tm]}deg)"` : ''}>
+					<span class="num" data-score="${tm}">00</span>
+					<span class="sub ai-tag" data-ai-tag="${tm}"${mode === 'local' && !isHuman(ENGINE_TEAMS[i]) ? '' : ' style="display:none"'}>AI</span>
+				</div>`).join('')}
+		</div>
 	`)
 
 	const board = el.querySelector('#board')
 	const scoreEls = Object.fromEntries(VIEW_TEAMS.map(tm => [tm, el.querySelector(`[data-score="${tm}"]`)]))
 	const turnEl = el.querySelector('#turn')
+	const chipEls = Object.fromEntries(VIEW_TEAMS.map(tm => [tm, el.querySelector(`[data-chip="${tm}"]`)]))
+	const mascotEls = Object.fromEntries(VIEW_TEAMS.map(tm => [tm, el.querySelector(`[data-mascot="${tm}"]`)]))
+
+	// 턴 표시 — 현재 턴 팀 마스코트만 걷기 애니, 나머지는 첫 프레임 정지.
+	// (애니 webp 는 정지 불가 → frozenMascot 이 뜬 정적 프레임으로 스왑, 비동기 완료 시 active 재확인)
+	function setTurnTeam(active) {
+		for (const tm of VIEW_TEAMS) {
+			const on = tm === active
+			chipEls[tm].classList.toggle('active', on)
+			const img = mascotEls[tm]
+			if (on) img.src = mascotSrc(tm)
+			else frozenMascot(tm).then(u => { if (!chipEls[tm].classList.contains('active')) img.src = u })
+		}
+	}
+
+	// 실시간 전투 BGM — 칸이 절반 이상 차면 우세/열세 변주로 교체, 동률은 직전 곡 유지 (ADR-009)
+	let battleBgm = 'bgm-battle'
+	function syncBattleBgm() {
+		if (!running) return // 씬 이탈 후 인플라이트 수가 새 씬의 BGM 을 전투 변주로 덮는 것 방지
+		const total = ENGINE_TEAMS.reduce((a, u) => a + map.count[u], 0)
+		if (total * 2 < map.totalCells) return // 전반전 — 기본 전투 테마 유지
+		const own = map.count[HUMAN]
+		const top = Math.max(...ENGINE_TEAMS.filter(u => u !== HUMAN).map(u => map.count[u]))
+		if (own === top) return
+		const want = own > top ? 'bgm-battle-up' : 'bgm-battle-down'
+		if (want !== battleBgm) { battleBgm = want; playBgm(want) }
+	}
 
 	installFx()
 
@@ -151,7 +183,7 @@ export function playScene(ctx) {
 			if (now && was && now !== was && pos !== exclude) { flipAnim(pos); flipped++ } // 감염 뒤집기
 			if (now && buildings[pos] && !buildings[pos].destroyed) destroyBuilding(pos) // 점령 파괴
 		} })
-		if (flipped) playSfx('sfx-infect')
+		if (flipped) sfx('sfx-infect')
 	}
 
 	function syncTile(pos, { pop = false } = {}) {
@@ -244,12 +276,12 @@ export function playScene(ctx) {
 					clearHints(); markSelectable(myView)
 					source = { x, y }
 					t.classList.add('selected')
-					playSfx('sfx-select')
+					sfx('sfx-select')
 					showLegal()
 				} else if (source && t.classList.contains('legal')) { // 실행
 					finish({ from: source, to: { x, y } })
 				} else { // 빈 곳 = 선택 해제
-					if (source) playSfx('sfx-invalid') // 소스 선택 상태에서 비합법 타겟 시도
+					if (source) sfx('sfx-invalid') // 소스 선택 상태에서 비합법 타겟 시도
 					clearHints(); markSelectable(myView); source = null
 				}
 			}
@@ -283,7 +315,7 @@ export function playScene(ctx) {
 				<div class="sub">${t('play.passHint')}</div>
 				<button class="btn primary" data-p="ready">${t('play.passReady')}</button>
 			`)
-			const finish = () => { ov.remove(); cancelHuman = null; playSfx('sfx-select'); resolve() }
+			const finish = () => { ov.remove(); cancelHuman = null; sfx('sfx-select'); resolve() }
 			cancelHuman = finish
 			onClick(ov, 'data-p', finish)
 			el.appendChild(ov)
@@ -299,20 +331,48 @@ export function playScene(ctx) {
 				fromPos, toPos,
 				onPhase: phaseSfx,
 				onPickup: () => { tileEl(fromPos).querySelector('.cell')?.remove() },
-				onDrop: () => { map.applyMove(userId, from, to); playSfx('sfx-spawn'); syncTile(toPos, { pop: true }); syncAll() }
+				onDrop: () => { map.applyMove(userId, from, to); sfx('sfx-spawn'); syncTile(toPos, { pop: true }); syncAll() }
 			})
 		} else {
 			await playMove(board, ships[team], {
 				pos: toPos,
 				onPhase: phaseSfx,
-				onImpact: () => { map.applyMove(userId, from, to); playSfx('sfx-spawn'); syncTile(toPos, { pop: true }); syncAll() }
+				onImpact: () => { map.applyMove(userId, from, to); sfx('sfx-spawn'); syncTile(toPos, { pop: true }); syncAll() }
 			})
 		}
 		postMove(before, toPos) // 감염 뒤집기 애니 + 점령 마을 파괴
+		syncBattleBgm() // 수 반영 후 우세/열세 재평가
+	}
+
+	// 시작 카운트다운 — 3·2·1·시작! 보드 위 오버레이 (게임 시작 안내)
+	async function countdown() {
+		const ov = div('countdown')
+		board.appendChild(ov)
+		const beat = (txt, playBeat) => {
+			ov.textContent = txt
+			playBeat()
+			ov.animate(
+				[{ transform: 'scale(1.7)', opacity: 0 }, { transform: 'scale(1)', opacity: 1, offset: .35 }, { transform: 'scale(1)', opacity: 1 }],
+				{ duration: 560, easing: 'ease-out' }
+			)
+		}
+		for (const n of ['3', '2', '1']) {
+			while (paused && running) await sleep(120) // 카운트다운 중 일시정지 존중
+			if (!running) break
+			beat(n, () => sfx('sfx-select', { rate: 1.25 }))
+			await sleep(620)
+		}
+		while (paused && running) await sleep(120)
+		if (running) {
+			beat(t('play.start'), () => sfx('sfx-turn'))
+			await sleep(560)
+		}
+		ov.remove()
 	}
 
 	async function playAiMove(uid) {
 		await sleep(450)
+		if (!running) return // 대기 중 씬 이탈 — 죽은 씬에서 수(애니+사운드) 두지 않음
 		const mv = pickMove(map, uid, AI_LEVEL[uid], aiRng)
 		if (mv) await execMove(viewOf(uid), uid, mv.from, mv.to)
 	}
@@ -321,6 +381,7 @@ export function playScene(ctx) {
 	async function autoFinish(filler) {
 		clearHints()
 		turnEl.textContent = t('play.finishing')
+		setTurnTeam(viewOf(filler))
 		const ship = ships[viewOf(filler)]
 		// 주의: isTerminal 을 가드로 쓰면 전멸(생존≤1) 상태에서 한 칸도 못 채움 — 빈칸 기준으로 순회
 		while (running) {
@@ -334,9 +395,11 @@ export function playScene(ctx) {
 			const before = map.fields.map(r => r.slice())
 			await playQuickFill(board, ship, {
 				pos: posStr(mv.to),
-				onImpact: () => { map.applyMove(filler, mv.from, mv.to); playSfx('sfx-spawn', { gain: 0.6, rate: 1.1 }); syncTile(posStr(mv.to), { pop: true }); syncAll() }
+				onPhase: p => { if (p === 'laser') sfx('sfx-laser', { rate: 1.2, gain: 0.5 }) }, // 연속 발사 — 저게인 변조
+				onImpact: () => { map.applyMove(filler, mv.from, mv.to); sfx('sfx-spawn', { gain: 0.6, rate: 1.1 }); syncTile(posStr(mv.to), { pop: true }); syncAll() }
 			})
 			postMove(before, posStr(mv.to))
+			syncBattleBgm()
 		}
 		if (running) await shipHome(ship)
 		if (running) finishGame()
@@ -361,7 +424,9 @@ export function playScene(ctx) {
 	async function turnLoop() {
 		ships = await mountShips(board, VIEW_TEAMS)
 		reset()
-		await sleep(300)
+		setTurnTeam(null) // 카운트다운 동안 전원 정지
+		await countdown()
+		if (!running) return
 		let idx = 0 // 라운드로빈: human(p1) 선공 → AI 팀들 순서대로
 		let stall = 0 // 연속 패스 수 (전원 무수 감지)
 		while (running) {
@@ -393,7 +458,8 @@ export function playScene(ctx) {
 			turnEl.textContent = humanNow
 				? (mode === 'local' ? t('play.localTurn', { name: playerLabel(cur) }) : t('play.yourTurn'))
 				: (mode === 'local' ? t('play.aiThink', { name: playerLabel(cur) }) : t('play.aiTurn'))
-			if (humanNow) playSfx('sfx-turn') // "내 차례" 알림음 (AI 좌석은 무음 — N:N/AI 스팸 방지, 사람 좌석은 전부 재생)
+			setTurnTeam(viewOf(cur)) // 현재 턴 마스코트만 걷기 애니
+			if (humanNow) sfx('sfx-turn') // "내 차례" 알림음 (AI 좌석은 무음 — N:N/AI 스팸 방지, 사람 좌석은 전부 재생)
 			if (humanNow) {
 				if (mode === 'local' && ENGINE_TEAMS.filter(isHuman).length > 1) {
 					await passOverlay(cur) // 로컬 핫싯: 기기를 넘기는 확인 화면 — 탭 전까지 board 리스너 미부착
@@ -439,7 +505,7 @@ export function playScene(ctx) {
 			CONTROLLER[uid] = 'ai'
 			AI_LEVEL[uid] = 'easy'
 			const tag = el.querySelector(`[data-ai-tag="${viewOf(uid)}"]`)
-			if (tag) tag.style.visibility = 'visible'
+			if (tag) tag.style.display = '' // 스코어 칩에 AI 뱃지 노출
 			paused = false
 			ov.remove()
 			if (pendingHumanUid === uid) cancelHuman?.() // 지금 이 좌석 차례 대기 중이면 즉시 AI로 넘김

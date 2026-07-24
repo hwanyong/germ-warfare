@@ -65,7 +65,25 @@
 	flex: 1 1 auto; min-width: 0; text-align: left;
 	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.play-hud { display: flex; align-items: center; gap: .4em; flex-shrink: 0; margin-left: auto; }
+/* 점수 패널 — 보드 아래, 팀 마스코트(걷는 세균) + 점수. 현재 턴 팀만 애니(.active) + 강조 */
+.score-panel {
+	width: min(100%, 560px);
+	display: flex;
+	justify-content: space-evenly;
+	align-items: center;
+	gap: .6em;
+	margin-top: .4em;
+}
+.score-chip {
+	display: flex;
+	align-items: center;
+	gap: .4em;
+	opacity: .55;
+	transition: opacity .25s ease, transform .25s ease;
+}
+.score-chip .mascot { height: 2.7em; display: block; }
+.score-chip .num { font-size: 1.15em; }
+.score-chip.active { opacity: 1; transform: scale(1.12); }
 .pause-overlay {
 	position: fixed; inset: 0; z-index: 20;
 	background: #efeee7d9;
@@ -93,11 +111,25 @@
 .rank-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: .5em; }
 
 /* Result */
-.result-badge { width: 3.5em; height: 3.5em; } /* 짧은 화면 압축은 아래 미디어쿼리 */
+.result-mascot { height: 4.6em; } /* 승/패 팀 마스코트 (짧은 화면 압축은 아래 미디어쿼리) */
 .result-head { font-family: var(--font-title); font-size: 2.6rem; }
 .result-head.win { color: var(--p1); }
 .result-head.lose { color: var(--p2); }
 .badge-new { font-family: var(--font-num); color: var(--p1); font-weight: 700; }
+
+/* 점수 항목 절차 공개 — 행 페이드인 + 카운트업(result.mjs), 합산 행 상단 구분선 */
+.score-lines { display: flex; flex-direction: column; gap: .12em; min-width: 13em; }
+.score-line {
+	display: flex; justify-content: space-between; gap: 1.2em;
+	opacity: 0; transform: translateY(.3em);
+	transition: opacity .25s ease, transform .25s ease;
+}
+.score-line.shown { opacity: 1; transform: none; }
+.score-line.score-total {
+	opacity: 1; transform: none;
+	border-top: 2px solid #0002; margin-top: .15em; padding-top: .15em;
+}
+#tap-hint { opacity: .45; }
 
 /* Credits */
 .credits-body { max-width: 30em; font-size: .95em; line-height: 1.7; }
@@ -108,6 +140,45 @@
 	position: fixed; z-index: 10;
 	left: max(.8em, env(safe-area-inset-left));
 	top: max(.8em, env(safe-area-inset-top));
+}
+
+/* ---------- Title 데코 (마스코트·우주선 + 간단 애니) ---------- */
+.title-scene { position: relative; overflow: hidden; }
+.title-scene > :not(.title-deco) { position: relative; z-index: 1; }
+.title-deco { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.title-deco img { position: absolute; }
+.t-ship { width: 4.2em; filter: drop-shadow(0 .25em .15em #0000002e); }
+.t-ship-p1 { left: 12%; top: 13%; animation: t-float 3.2s ease-in-out infinite; }
+.t-ship-p2 { right: 10%; top: 24%; width: 3.4em; animation: t-float 2.7s ease-in-out infinite reverse; }
+@keyframes t-float {
+	0%, 100% { transform: translateY(0) rotate(-2deg); }
+	50%      { transform: translateY(-.5em) rotate(2deg); }
+}
+/* 걷는 마스코트 — 화면 하단 횡단. -right 스프라이트 = 우향 걷기, p2 는 반전해 좌향 */
+.t-walk { height: 3em; left: 0; bottom: max(1em, env(safe-area-inset-bottom)); }
+.t-walk-p1 { animation: t-walk-r 26s linear infinite; }
+.t-walk-p2 {
+	height: 2.6em;
+	bottom: calc(max(1em, env(safe-area-inset-bottom)) + 3.6em);
+	animation: t-walk-l 34s linear infinite;
+}
+@keyframes t-walk-r {
+	from { transform: translateX(-5em); }
+	to   { transform: translateX(100vw); }
+}
+@keyframes t-walk-l {
+	from { transform: translateX(100vw) scaleX(-1); }
+	to   { transform: translateX(-5em) scaleX(-1); }
+}
+.title-scene .logo { animation: logo-breathe 3.6s ease-in-out infinite; }
+@keyframes logo-breathe {
+	0%, 100% { transform: scale(1) rotate(-.6deg); }
+	50%      { transform: scale(1.035) rotate(.6deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+	.title-scene .logo, .t-ship, .t-walk { animation: none; }
+	.t-walk-p1 { transform: translateX(18vw); }         /* 우향 원본 */
+	.t-walk-p2 { transform: translateX(70vw) scaleX(-1); } /* 반전 = 좌향 */
 }
 
 /* 스테이지 선택 (캠페인 챕터 그리드) */
@@ -139,7 +210,7 @@
 	.scene { gap: .55em; }
 	.scene .logo { font-size: 2rem; }
 	.result-head { font-size: 1.8rem; }
-	.result-badge { width: 2.2em; height: 2.2em; }
+	.result-mascot { height: 2.6em; }
 	.btn-col { flex-direction: row; flex-wrap: wrap; justify-content: center; }
 	.card { padding: .6em 1em; }
 }

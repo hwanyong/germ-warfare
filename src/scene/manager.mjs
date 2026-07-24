@@ -30,6 +30,18 @@ export class SceneManager {
 		this.#enter(name, params)
 	}
 
+	// 현재 씬 재마운트/치환 — 스택을 늘리지 않는다.
+	// (설정 토글처럼 같은 씬을 다시 그릴 때 go() 를 쓰면 중복 push 로 back 이 제자리걸음)
+	replace(name, params = {}) {
+		if (!this.#scenes[name]) {
+			console.error('[scene] unknown:', name)
+			return
+		}
+		this.#leave()
+		this.#stack[this.#stack.length - 1] = { name, params }
+		this.#enter(name, params)
+	}
+
 	back() {
 		if (this.#stack.length < 2) return
 		this.#leave()
@@ -41,6 +53,7 @@ export class SceneManager {
 	#enter(name, params) {
 		const ctx = {
 			go: (n, p) => this.go(n, p),
+			replace: (n, p) => this.replace(n, p),
 			back: () => this.back(),
 			params,
 			store: this.#store

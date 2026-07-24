@@ -21,6 +21,10 @@ export const CRITICAL_IMAGES = [
 export const DEFERRED_IMAGES = [
 	`${A}/cell-green.png`, `${A}/cell-pink.png`,
 	`${A}/cell-green-sm.png`, `${A}/cell-pink-sm.png`,
+	// 마스코트(타이틀 데코·플레이 HUD·결과) — 애니 webp. fast 는 승리(=green)만 사용
+	`${A}/mascot/germ-green.webp`, `${A}/mascot/germ-pink.webp`,
+	`${A}/mascot/germ-green-right.webp`, `${A}/mascot/germ-pink-right.webp`,
+	`${A}/mascot/germ-green-fast.webp`,
 	`${A}/ship/ship-p1.png`, `${A}/ship/ship-p2.png`,
 	`${A}/laser/beam-p1.png`, `${A}/laser/beam-p2.png`,
 	`${A}/laser/burst-p1.png`, `${A}/laser/burst-p2.png`,

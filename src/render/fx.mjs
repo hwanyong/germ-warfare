@@ -69,6 +69,32 @@ function spark(layer, team, x, y, px) {
 	).finished.then(() => s.remove())
 }
 
+/** 발사구(muzzle) → targetY 레이저 빔 1발 — playMove/playJump/playQuickFill 공용.
+ * punch: 착탄 직전 굵어지는 펀치 프레임(생성 레이저용). 소멸 시 자체 제거. @returns muzzle 좌표 */
+function fireBeam(layer, ship, targetY, { dur = 440, punch = true } = {}) {
+	const m = ship.muzzle()
+	const beam = el('div', 'laser-beam')
+	beam.dataset.team = ship.team
+	beam.style.left = `${m.x}px`
+	beam.style.top = `${m.y}px`
+	beam.style.height = `${Math.max(targetY - m.y, 0)}px`
+	layer.appendChild(beam)
+	const frames = punch
+		? [
+			{ transform: 'translateX(-50%) scaleY(0) scaleX(1)', opacity: 0.3 },
+			{ transform: 'translateX(-50%) scaleY(1) scaleX(1)', opacity: 1, offset: 0.4 },
+			{ transform: 'translateX(-50%) scaleY(1) scaleX(1.8)', opacity: 1, offset: 0.6 },
+			{ transform: 'translateX(-50%) scaleY(1) scaleX(1)', opacity: 0 }
+		]
+		: [
+			{ transform: 'translateX(-50%) scaleY(0)', opacity: .2 },
+			{ transform: 'translateX(-50%) scaleY(1)', opacity: 1, offset: .5 },
+			{ transform: 'translateX(-50%) scaleY(1)', opacity: 0 }
+		]
+	beam.animate(frames, { duration: dur, easing: 'ease-out' }).finished.then(() => beam.remove())
+	return m
+}
+
 /** 우주선 게임 오브젝트 — 위치·크기·발사구를 스스로 관리. */
 class Ship {
 	constructor(layer, team, homeFrac, spriteTeam = null, hue = 0) {
@@ -193,25 +219,8 @@ export async function playMove(board, ship, { pos, onImpact, onPhase }) {
 
 	// 2) 발사 — 전부 캐릭터의 발사구(muzzle) 기준 (위치·크기 오프셋)
 	onPhase?.('laser')
-	const m = ship.muzzle()
-	const beamH = Math.max(cyCenter - m.y, 0)
-
-	const beam = el('div', 'laser-beam')
-	beam.dataset.team = ship.team
-	beam.style.left = `${m.x}px`
-	beam.style.top = `${m.y}px`
-	beam.style.height = `${beamH}px`
-	layer.appendChild(beam)
+	const m = fireBeam(layer, ship, cyCenter)
 	spark(layer, ship.team, m.x, m.y, ship.w * MUZZLE_SPARK_K) // 총구 스파크(캐릭터 크기 기준)
-	beam.animate(
-		[
-			{ transform: 'translateX(-50%) scaleY(0) scaleX(1)', opacity: 0.3 },
-			{ transform: 'translateX(-50%) scaleY(1) scaleX(1)', opacity: 1, offset: 0.4 },
-			{ transform: 'translateX(-50%) scaleY(1) scaleX(1.8)', opacity: 1, offset: 0.6 },
-			{ transform: 'translateX(-50%) scaleY(1) scaleX(1)', opacity: 0 }
-		],
-		{ duration: 440, easing: 'ease-out' }
-	).finished.then(() => beam.remove())
 
 	await wait(150)
 
@@ -259,16 +268,21 @@ function tileMetric(board, pos) {
 }
 
 /**
- * 자동 마무리 채움 — 우주선이 타겟 위로 짧게 이동 후 즉시 생성(레이저 생략, 빠른 템포).
- * 연속 호출용(귀환 없음). 시퀀스 끝에 shipHome() 호출.
+ * 자동 마무리 채움 — 우주선이 타겟 위로 짧게 이동 후 압축 레이저 발사로 생성(빠른 템포).
+ * 클론 = 레이저 생성이라는 본편 문법(playMove)의 축약판. 연속 호출용(귀환 없음) — 시퀀스 끝에 shipHome().
  */
-export async function playQuickFill(board, ship, { pos, onImpact }) {
+export async function playQuickFill(board, ship, { pos, onImpact, onPhase }) {
 	const layer = board.querySelector('.fx-layer')
 	const tile = board.querySelector(`.tile[data-pos="${pos}"]`)
 	if (!ship || !tile) { onImpact?.(); return }
 	const T = tileMetric(board, pos)
-	const airY = T.top - T.h * 0.7 + ship.h / 2
+	const airY = T.top - T.h + ship.h / 2 - FIRE_LIFT * 0.5 // playMove 보다 낮은 공중 — 템포 우선
 	await ship.moveTo(T.cx, airY, 180)
+	onPhase?.('laser')
+	const m = fireBeam(layer, ship, T.cy, { dur: 260 })
+	spark(layer, ship.team, m.x, m.y, ship.w * MUZZLE_SPARK_K * 0.8) // 총구 스파크 (축소판)
+	await wait(110) // 빔 도달 타이밍 뒤 착탄
+	onPhase?.('impact')
 	spark(layer, ship.team, T.cx, T.cy)
 	impactFlash(layer, ship.team, T.cx, T.cy)
 	onImpact?.()
@@ -300,17 +314,7 @@ export async function playJump(board, ship, { fromPos, toPos, onPickup, onDrop, 
 
 	// 2) 트랙터 빔 + 수거 스파크 → 소스 제거, 배에 미니 세균 부착
 	onPhase?.('pickup')
-	const mz = ship.muzzle()
-	const beam = el('div', 'laser-beam')
-	beam.dataset.team = ship.team
-	beam.style.left = `${mz.x}px`
-	beam.style.top = `${mz.y}px`
-	beam.style.height = `${Math.max(F.cy - mz.y, 0)}px`
-	layer.appendChild(beam)
-	beam.animate(
-		[{ transform: 'translateX(-50%) scaleY(0)', opacity: .2 }, { transform: 'translateX(-50%) scaleY(1)', opacity: 1, offset: .5 }, { transform: 'translateX(-50%) scaleY(1)', opacity: 0 }],
-		{ duration: 320, easing: 'ease-out' }
-	).finished.then(() => beam.remove())
+	fireBeam(layer, ship, F.cy, { dur: 320, punch: false })
 	spark(layer, ship.team, F.cx, F.cy, ship.w)
 	onPickup?.() // 모델: 소스 세균 제거 (렌더가 소스 germ 축소/제거)
 

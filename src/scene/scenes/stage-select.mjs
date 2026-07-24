@@ -1,13 +1,15 @@
 // StageSelect 씬 — 캠페인 챕터×스테이지 그리드 + 해금(직전 승리) + 난이도 + 최고점.
-// 카드 정보: 번호·이름 / 보드·지형·적군 수·AI 기본레벨(💀) / 난이도별 best.
+// 카드 정보: 번호·이름 / 보드·지형·적군 수·AI 기본레벨(★) / 난이도별 best.
 import { div, onClick } from '../dom.mjs'
 import { STAGES, STAGE_ORDER, CHAPTERS } from '../../data/stages.mjs'
 import { getRecord, hasWin } from '../../storage/progress.mjs'
 import { t, getLang } from '../../i18n/index.mjs'
 
+// DIFFS/LABEL 은 seats.mjs(로컬 대전 좌석 난이도)도 재사용 — export
 export const DIFFS = ['easy', 'normal', 'hard']
 export const LABEL = { easy: 'EASY', normal: 'NORMAL', hard: 'HARD' }
-const SKULLS = { easy: '💀', normal: '💀💀', hard: '💀💀💀' }
+// UI 이모지 금지 규약 — 텍스트 심볼만 (★=AI 레벨, ▲=바위, VS=적군 수)
+const STARS = { easy: '★', normal: '★★', hard: '★★★' }
 
 export function stageSelectScene(ctx) {
 	let difficulty = ctx.params.difficulty ?? 'normal'
@@ -31,14 +33,14 @@ export function stageSelectScene(ctx) {
 			return `
 			<div class="card stage-card locked">
 				<div class="stage-num">${num}</div>
-				<div class="sub">🔒</div>
+				<div class="sub">${t('stage.locked')}</div>
 			</div>`
 		}
 		const enemies = (s.teams ?? 2) - 1
 		return `
 		<div class="card stage-card" data-stage="${id}"${id === stageId ? ' aria-selected="true"' : ''} style="cursor:url(/germ-warfare/assets/cursor/hand.png) 6 2, pointer">
 			<div class="stage-num">${num} · ${s.name[lang] ?? s.name.en}</div>
-			<div class="sub">${s.grid.w}×${s.grid.h}${s.blocked?.length ? ` · ⛰${s.blocked.length}` : ''} · 👾${enemies} · ${SKULLS[s.ai ?? 'normal']}</div>
+			<div class="sub">${s.grid.w}×${s.grid.h}${s.blocked?.length ? ` · ▲${s.blocked.length}` : ''} · VS${enemies} · ${STARS[s.ai ?? 'normal']}</div>
 			<div>${t('stage.best')} <span class="num" data-best="${id}">—</span> <span class="sub" data-wins="${id}"></span></div>
 		</div>`
 	}

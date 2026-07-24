@@ -31,11 +31,12 @@
 
 ```
 ┌───────────────────────────┐
-│   🟢 You  12 : 8  AI 🔴    │  컴팩트 HUD (턴 표시)
+│ 스테이지명 · 난이도     [II] │  상단 바 (일시정지)
+│         턴 라벨            │
 │   ┌───────────────────┐   │
-│   │   보드 7×7 정사각   │   │  min(92vmin,560px), 화면 채움
+│   │   보드 W×H 정사각   │   │  min(가로, 560px, 세로 잔여 × W/H)
 │   └───────────────────┘   │
-│   [설정]        [메뉴]     │
+│  (마스코트)12   (마스코트)8 │  점수 패널 — 현재 턴 팀만 걷기 애니, 나머지 정지
 └───────────────────────────┘
 ```
 
@@ -88,12 +89,13 @@ mascot/germ-{green,pink}.webp
 ## 8. 사운드 (구현됨 — src/audio, ADR-009)
 
 톤 = **카툰 + 레트로 SF 혼합**(손그림 아이덴티티의 청각판). ElevenLabs 생성,
-`public/assets/audio/` 13종(~3.2MB), 전부 `src/audio/manifest.mjs` 등록(SSOT). 전 항목 배선 완료:
+`public/assets/audio/` 15종(~6MB), 전부 `src/audio/manifest.mjs` 등록(SSOT). 전 항목 배선 완료:
 
 | 에셋 | 트리거 (배선 지점) |
 |---|---|
 | `bgm-main` | play/result 제외 전 씬 메인 테마 — 씬 매핑 `SCENE_BGM`(main.mjs), 첫 유효 제스처 후 발음 |
-| `bgm-battle` | play 씬 전용 전투 루프 — 씬 전환 시 페이드 교체, result 는 BGM 무음(징글만) |
+| `bgm-battle` | play 씬 전투 루프(전반전) — 씬 전환 시 페이드 교체, result 는 BGM 무음(징글만) |
+| `bgm-battle-up/down` | play 씬 후반전(칸 ≥1/2 점유) 우세/열세 실시간 교체 — play.mjs `syncBattleBgm`, 동률은 직전 곡 유지 |
 | `sfx-launch/laser/impact` | `playMove`/`playJump` onPhase — 귀환은 launch 저피치, 트랙터빔은 laser 저피치 재활용 |
 | `sfx-spawn` / `sfx-infect` | play 씬 onImpact/onDrop 생성 pop / postMove 뒤집기 diff>0 시 1회 |
 | `sfx-select` / `sfx-invalid` | play 씬 소스 세균 선택 / 소스 선택 상태에서 비합법 타겟 클릭 |
