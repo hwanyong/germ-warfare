@@ -56,11 +56,12 @@ germ-warfare/
     ├── game/     ★이식자산   # 규칙 엔진 SSOT — map.mjs(GameMap), constants, rng, index, test
     ├── ai/       ★이식자산   # PvE 상대 (메인스레드; legalMoves+simulate+eval+negamax)
     ├── render/   ★이식자산   # 보드 렌더
+    ├── audio/                # BGM/SFX (Web Audio) — manifest.mjs = 오디오 에셋 SSOT (ADR-009)
     ├── menu/                 # 시작 / 스테이지 선택 / 설정 (로비 대체)
     ├── match/                # 턴 루프 드라이버 (human ↔ AI)
     └── storage/              # localStorage (설정 / 스테이지 진행)
 ```
-★ = 앱2로 이식되는 자산. `menu/match/storage` 는 데모 전용.
+★ = 앱2로 이식되는 자산. `audio/menu/match/storage` 는 데모 전용.
 
 ## 5. PvE 설계 (Helldyinger `training-ground` 벤치마크)
 

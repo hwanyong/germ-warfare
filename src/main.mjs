@@ -10,6 +10,7 @@ import './styles/board.css'
 import './styles/fx.css'
 import { GameMap, USERS } from './game/index.mjs'
 import { installFx, mountShips, playMove, WOBBLE_VARIANTS } from './render/fx.mjs'
+import { installAudio, unlockOnGesture, resumeAudio, playSfx, playBgm, setMuted, isMuted } from './audio/audio.mjs'
 
 const ROWS = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
 const teamUser = t => (t === 'p1' ? USERS.ID0 : USERS.ID1)
@@ -19,6 +20,7 @@ const posToXY = pos => ({ x: +pos[1], y: ROWS.indexOf(pos[0]) })
 // ---- 정적 스켈레톤 (외부 입력 없음) ----
 document.getElementById('app').innerHTML = `
 	<div class="screen">
+		<button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false" title="소리 켜기">🔇</button>
 		<h1 class="title">세균전</h1>
 		<div class="scoreline">
 			<span class="cell badge" data-owner="p1"></span>
@@ -42,6 +44,28 @@ const s2 = document.getElementById('s2')
 
 installFx()
 mountShips(board)
+installAudio()
+
+// ---- 사운드 배선 (자동재생 정책: 첫 제스처에서 언락 + BGM 시작) ----
+const soundToggle = document.getElementById('soundToggle')
+
+function syncSoundToggle() {
+	const on = !isMuted()
+	soundToggle.textContent = on ? '🔊' : '🔇'
+	soundToggle.setAttribute('aria-pressed', String(on))
+	soundToggle.title = on ? '소리 끄기' : '소리 켜기'
+}
+syncSoundToggle()
+
+// 자동재생 정책: 활성화 부여 제스처(pointerup/keydown)에서 running 전환까지 재시도 후 BGM 시작
+unlockOnGesture(() => playBgm('bgm-battle'))
+
+soundToggle.addEventListener('click', () => {
+	resumeAudio() // iOS 인터럽션 후 복구 경로 겸용
+	setMuted(!isMuted())
+	playSfx('sfx-button')
+	syncSoundToggle()
+})
 
 function tile(pos) {
 	return board.querySelector(`.tile[data-pos="${pos}"]`)
@@ -114,9 +138,21 @@ async function loop() {
 			await playMove(board, {
 				team: move.team,
 				pos: move.pos,
+				onPhase: phase => {
+					if (phase === 'launch') playSfx('sfx-launch')
+					else if (phase === 'laser') playSfx('sfx-laser')
+					else if (phase === 'impact') playSfx('sfx-impact')
+					else if (phase === 'return') playSfx('sfx-launch', { rate: 0.85, gain: 0.5 })
+				},
 				onImpact: () => {
+					const user = teamUser(move.team)
+					const rival = user === USERS.ID0 ? USERS.ID1 : USERS.ID0
+					const rivalBefore = map.count[rival]
 					const { x, y } = posToXY(move.pos)
-					map.setField(teamUser(move.team), { x, y })
+					map.setField(user, { x, y })
+					playSfx('sfx-spawn')
+					// 감염음은 실제 감염(상대 수 감소) 시에만 — 엔진 infected 이벤트는 0건에도 발화라 부적합
+					if (map.count[rival] < rivalBefore) setTimeout(() => playSfx('sfx-infect'), 120)
 					// 착탄 칸 pop + 감염 반영(주변 재동기화)
 					syncTile(move.pos, { pop: true })
 					syncAll()

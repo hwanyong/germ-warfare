@@ -85,7 +85,24 @@ mascot/germ-{green,pink}.webp
 > 데모(`main.mjs`)가 이 애니를 셀프플레이로 시연. P0의 `src/render`/`src/match` 가
 > 클릭 인터랙션에 `playMove` 를 연결한다(합법수 hover=crosshair → 클릭 → playMove → setField).
 
-## 8. 미래 폴리시 (선택)
+## 8. 사운드 (구현됨 — src/audio, ADR-009)
+
+톤 = **카툰 + 레트로 SF 혼합**(손그림 아이덴티티의 청각판). ElevenLabs 생성,
+`public/assets/audio/` 12종(~1.8MB), 전부 `src/audio/manifest.mjs` 등록(SSOT).
+
+| 에셋 | 트리거 | 상태 |
+|---|---|---|
+| `bgm-battle` | 첫 제스처 시 시작, 갭리스 루프 | ✅ 배선 |
+| `sfx-launch/laser/impact` | `playMove` onPhase(발사/레이저/착탄) — 귀환은 launch 저피치 재활용 | ✅ 배선 |
+| `sfx-spawn` / `sfx-infect` | onImpact 생성 pop / 실제 감염(count 감소) 시 | ✅ 배선 |
+| `sfx-button` | UI 버튼(사운드 토글 🔊/🔇, 우상단) | ✅ 배선 |
+| `sfx-select` / `sfx-invalid` | P0: 셀 선택 / 무효 이동 | FUTURE |
+| `sfx-turn` / `jingle-win` / `jingle-lose` | P1: 턴 교대 / 승리 / 패배 | FUTURE |
+
+menu BGM 은 메뉴 화면 설계 후 생성(미정). 뮤트/설정은 localStorage
+(`src/storage/settings.mjs`). `prefers-reduced-motion` 과 비커플링 — ADR-009.
+
+## 9. 미래 폴리시 (선택)
 
 - CSS 커서 → 그림자 포함 애니 div 커서(기존 방식) 승격.
 - 축 라벨(A–G / 0–6) 재도입.

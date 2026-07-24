@@ -15,6 +15,7 @@
 - 규칙의 무작위는 시드 PRNG(`src/game/rng.mjs`)로만 — `Math.random` 직접 사용 금지(결정성).
 - **이식 자산**(`src/game`, `src/ai`, `src/render`)은 순수·클린 유지 — 미래 멀티플레이 앱이 재사용(ADR-005).
 - 에셋은 `public/assets/` 에 실사용만 린하게. **데드 에셋 금지**(복사만 하고 미배선 X).
+- 오디오 에셋(`public/assets/audio/`)은 **`src/audio/manifest.mjs` 등록 필수** (ADR-009).
 
 ## 배포
 

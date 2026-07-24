@@ -100,9 +100,10 @@ function spark(layer, team, x, y) {
 /**
  * 한 수 애니메이션.
  * @param {HTMLElement} board - .board (position:relative, .fx-layer 포함)
- * @param {{team:'p1'|'p2', pos:string, onImpact?:Function}} opts - pos = "A0"..
+ * @param {{team:'p1'|'p2', pos:string, onImpact?:Function, onPhase?:Function}} opts - pos = "A0"..
+ *   onPhase('launch'|'laser'|'impact'|'return') — 단계 시작 알림(사운드 등 외부 동기화용, render 는 소비처 무지)
  */
-export async function playMove(board, { team, pos, onImpact }) {
+export async function playMove(board, { team, pos, onImpact, onPhase }) {
 	const layer = board.querySelector('.fx-layer')
 	const ship = layer?.querySelector(`.ship[data-team="${team}"]`)
 	const tile = board.querySelector(`.tile[data-pos="${pos}"]`)
@@ -117,9 +118,11 @@ export async function playMove(board, { team, pos, onImpact }) {
 	const airY = cyTop - t.height * 1.1 + shipH / 2 - FIRE_LIFT // 셀 위 "공중" (발사 시 20px 더 상승)
 
 	// 1) 타겟 상공으로 이동
+	onPhase?.('launch')
 	await moveTo(ship, cx, airY, 460)
 
 	// 2) 레이저 발사 — 빔 draw+pulse + 하강 볼트 + 총구 스파크
+	onPhase?.('laser')
 	const beamTop = airY + shipH * 0.5
 	const beamH = Math.max(cyCenter - beamTop, 0)
 
@@ -157,6 +160,7 @@ export async function playMove(board, { team, pos, onImpact }) {
 	await wait(150)
 
 	// 3) 착탄 → burst 스파크(대칭, 중앙정렬) + 플래시 + 세균 생성/이동
+	onPhase?.('impact')
 	spark(layer, team, cx, cyCenter)
 	const flash = el('div', 'impact-flash')
 	flash.dataset.team = team
@@ -174,5 +178,6 @@ export async function playMove(board, { team, pos, onImpact }) {
 	await wait(130)
 
 	// 4) 귀환
+	onPhase?.('return')
 	await moveTo(ship, ship._home.x, ship._home.y, 460)
 }

@@ -83,6 +83,27 @@ h1,
 	border-image: var(--frame-circle) 62 / 1em / 0.1em;
 }
 
+/* 사운드 토글 (우상단 고정) — 손그림 원형 프레임 재활용 */
+.sound-toggle {
+	position: fixed;
+	top: 0.6em;
+	right: 0.6em;
+	z-index: 10;
+
+	width: 2.2em;
+	height: 2.2em;
+	padding: 0;
+	font-size: 1em;
+	line-height: 1;
+
+	background: none;
+	border: 0.4em solid transparent;
+	border-image: var(--frame-circle) 62 / 1em / 0.1em;
+}
+.sound-toggle[aria-pressed="false"] {
+	opacity: 0.55;
+}
+
 /* 세균 말 (칸 소유 표시 / 뱃지) */
 .cell {
 	background-repeat: no-repeat;
