@@ -7,7 +7,6 @@ export function settingsScene(ctx) {
 	const lang = getLang()
 	const muted = isMuted()
 	const el = div('scene', `
-		<button class="btn back-btn" data-act="back">← ${t('settings.back')}</button>
 		<div class="logo" style="font-size:2rem">${t('settings.title')}</div>
 		<div class="card">
 			<div class="btn-row"><span>${t('settings.language')}</span>
@@ -23,6 +22,9 @@ export function settingsScene(ctx) {
 		<div class="btn-row">
 			<button class="btn" data-act="tutorial">${t('settings.tutorialAgain')}</button>
 			<button class="btn" data-act="credits">${t('settings.credits')}</button>
+		</div>
+		<div class="btn-row">
+			<button class="btn" data-act="back">${t('settings.back')}</button>
 		</div>
 	`)
 	// 재마운트는 replace — go() 는 스택에 settings 를 중복 push 해 back 이 제자리걸음(즉각 복귀 안 되는 버그)

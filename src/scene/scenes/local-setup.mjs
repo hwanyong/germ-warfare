@@ -43,13 +43,12 @@ export function localSetupScene(ctx) {
 		</div>`
 
 	const el = div('scene local-setup', `
-		<button class="btn back-btn" data-act="back">← ${t('localSetup.back')}</button>
 		<div class="logo" style="font-size:2rem">${t('localSetup.title')}</div>
 
 		<div class="card setup-card">
 			<div class="setup-row">
-				<span>${t('localSetup.humans')}</span> ${stepper('humans', st.humans)}
-				<span>${t('localSetup.ai')}</span> ${stepper('ai', st.ai)}
+				<span class="setup-group"><span class="setup-label">${t('localSetup.humans')}</span>${stepper('humans', st.humans)}</span>
+				<span class="setup-group"><span class="setup-label">${t('localSetup.ai')}</span>${stepper('ai', st.ai)}</span>
 			</div>
 			<div class="sub" data-total>${t('localSetup.total', { n: total() })}</div>
 			<div class="setup-row" data-ai-diff${st.ai > 0 ? '' : ' style="display:none"'}>
@@ -81,6 +80,7 @@ export function localSetupScene(ctx) {
 		<div class="stage-actions">
 			<div class="btn-row">
 				<button class="btn primary" data-act="start" id="ls-start">${t('localSetup.start')}</button>
+				<button class="btn" data-act="back">${t('localSetup.back')}</button>
 			</div>
 		</div>
 	`)
@@ -108,7 +108,8 @@ export function localSetupScene(ctx) {
 			const next = { humans: st.humans, ai: st.ai }
 			next[key] += d
 			const tot = next.humans + next.ai
-			if (next.humans < 1 || next.ai < 0 || tot < 2 || tot > LOCAL_LIMITS.maxTeams) return // 불변식 위반 무시
+			// 불변식: 사람 0~4·AI 0~4·합 2~4 (사람 0 = 전원 AI 관전/데모 허용)
+			if (next.humans < 0 || next.ai < 0 || tot < 2 || tot > LOCAL_LIMITS.maxTeams) return
 			st.humans = next.humans; st.ai = next.ai
 			refreshPeople()
 		} else if (key === 'w' || key === 'h') {
@@ -142,7 +143,7 @@ export function localSetupScene(ctx) {
 	})
 
 	onClick(el, 'data-act', act => {
-		if (act === 'back') { ctx.back(); return }
+		if (act === 'back') { ctx.go('title'); return } // 항상 타이틀로 (스택 pop 시 게임화면 복귀 버그 방지)
 		if (act !== 'start') return
 		const teams = total()
 		// 무작위 시드 = 매치 시작 시각(UI 계층 — src/game 아님). buildLocalStage 내부 mulberry32 로 결정적 배치.

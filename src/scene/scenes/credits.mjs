@@ -4,7 +4,6 @@ import { t } from '../../i18n/index.mjs'
 
 export function creditsScene(ctx) {
 	const el = div('scene', `
-		<button class="btn back-btn" data-act="back">← ${t('credits.back')}</button>
 		<div class="logo" style="font-size:2rem">${t('title.credits')}</div>
 		<div class="card credits-body">
 			<div class="owner">Germ Warfare (세균전)</div>
@@ -15,6 +14,9 @@ export function creditsScene(ctx) {
 			<div class="sub">Alien UFO · Cartography · Crosshair · Cursor · UI Pack</div>
 			<div>${t('credits.paper')}: <a href="https://ambientcg.com/view?id=Paper001" target="_blank" rel="noopener">ambientCG Paper001</a> (CC0)</div>
 			<div>${t('credits.fonts')}: <a href="https://fonts.google.com" target="_blank" rel="noopener">Google Fonts</a> — Orbitron · Gugi · Dongle (OFL)</div>
+		</div>
+		<div class="btn-row">
+			<button class="btn" data-act="back">${t('credits.back')}</button>
 		</div>
 	`)
 	onClick(el, 'data-act', () => ctx.back())

@@ -103,7 +103,10 @@
 /* Local PvP — 셋업(LocalSetup): 인원 스테퍼 + 맵 프리셋/커스텀 */
 .local-setup { justify-content: flex-start; padding-bottom: 0; }
 .setup-card { width: min(94vw, 30em); }
-.setup-row { display: flex; align-items: center; justify-content: center; gap: .5em .8em; flex-wrap: wrap; }
+.setup-row { display: flex; align-items: center; justify-content: center; gap: .5em .9em; flex-wrap: wrap; }
+/* 라벨+스테퍼를 한 덩어리로 — 모바일에서 "Humans [-]1[+]" 가 라벨/버튼 사이로 쪼개져 개행되는 것 방지 */
+.setup-group { display: inline-flex; align-items: center; gap: .4em; flex-wrap: nowrap; white-space: nowrap; }
+.setup-label { font-family: var(--font-body); }
 .stepper { display: inline-flex; align-items: center; gap: .35em; }
 .stepper .btn { font-size: 1.3rem; line-height: 1; padding: 0; width: 1.9em; min-width: 1.9em; height: 1.9em; min-height: 1.9em; }
 .stepper .num { min-width: 1.6em; text-align: center; font-size: 1.25rem; }
@@ -141,11 +144,7 @@
 .credits-body a { color: var(--p1); text-decoration: none; }
 .credits-body .owner { font-weight: 700; }
 
-.back-btn {
-	position: fixed; z-index: 10;
-	left: max(.8em, env(safe-area-inset-left));
-	top: max(.8em, env(safe-area-inset-top));
-}
+/* Back 버튼 규약: 좌상단 fixed 금지 — 각 씬의 하단 액션 버튼 근처(.btn-row)에 인라인 배치(일관성) */
 
 /* ---------- Title 데코 (마스코트·우주선 + 간단 애니) ---------- */
 .title-scene { position: relative; overflow: hidden; }
