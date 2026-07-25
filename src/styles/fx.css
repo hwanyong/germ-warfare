@@ -20,6 +20,8 @@
 .cell.w5 { filter: url(#germ-wobble-5); }
 .cell.w6 { filter: url(#germ-wobble-6); }
 .cell.w7 { filter: url(#germ-wobble-7); }
+/* 대형 커스텀 보드(play.mjs BIG): wobble 필터·숨쉬기 애니 생략 — 수천 셀 성능 확보 */
+.cell.lite { filter: none; animation: none; }
 @keyframes germ-breathe {
 	0%, 100% { transform: scale(1); }
 	50%      { transform: scale(1.055); }

@@ -11,7 +11,7 @@ import { effectiveDifficulty, DIFFICULTY } from '../ai.mjs'
 const TEAMS_POOL = ['USER0', 'USER1', 'USER2', 'USER3']
 const AI_RANK = { easy: 0, normal: 1, hard: 2 }
 const key = p => `${p.x},${p.y}`
-const posToXY = pos => ({ x: +pos.slice(1), y: pos.charCodeAt(0) - 65 })
+const posToXY = pos => { const i = pos.indexOf('_'); return { y: +pos.slice(0, i), x: +pos.slice(i + 1) } } // "y_x" 숫자 인코딩
 
 const CARTO_DIR = fileURLToPath(new URL('../../../public/assets/cartography/', import.meta.url))
 const CARTO = new Set(readdirSync(CARTO_DIR).filter(f => f.endsWith('.png')).map(f => f.slice(0, -4)))
@@ -64,7 +64,6 @@ test('전 스테이지 데이터 유효성', () => {
 		const s = STAGES[id]
 		const { w, h } = s.grid
 		assert.ok(w >= 5 && w <= 12 && h >= 5 && h <= 12, `${id}: grid 범위`)
-		assert.ok(w <= 10, `${id}: w>10 이면 village pos 가 두 자리 x 필요`)
 		assert.ok(Number.isInteger(s.parTurns) && s.parTurns > 0, `${id}: parTurns`)
 		assert.ok(s.ai === undefined || s.ai in DIFFICULTY, `${id}: ai 레벨 오타`)
 		const teams = s.teams ?? 2

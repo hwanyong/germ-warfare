@@ -17,7 +17,7 @@ export function titleScene(ctx) {
 		<div class="sub">GERM WARFARE</div>
 		<div class="btn-col">
 			<button class="btn primary" data-go="stage-select">${t('title.play')}</button>
-			<button class="btn" data-go="stage-select" data-mode="local">${t('title.localPvp')}</button>
+			<button class="btn" data-go="local-setup">${t('title.localPvp')}</button>
 			<div class="btn-row">
 				<button class="btn" data-go="tutorial">${t('title.tutorial')}</button>
 				<button class="btn" data-go="settings">${t('title.settings')}</button>
@@ -25,6 +25,6 @@ export function titleScene(ctx) {
 			</div>
 		</div>
 	`)
-	onClick(el, 'data-go', (name, node) => ctx.go(name, node.dataset.mode ? { mode: node.dataset.mode } : undefined))
+	onClick(el, 'data-go', name => ctx.go(name))
 	return { el }
 }

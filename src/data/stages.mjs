@@ -17,7 +17,7 @@ import { mulberry32 } from '../game/rng.mjs'
 
 const P = (x, y) => ({ x, y })
 const key = p => `${p.x},${p.y}`
-const rowChar = y => String.fromCharCode(65 + y) // A, B, C, ...
+const posStr = (x, y) => `${y}_${x}` // 타일 좌표 = "y_x" 숫자 (play.mjs 와 동일 인코딩)
 
 //#region 지형 패턴 (전부 두께 1 → 거리2 MOVE 로 점프 가능, 고립 없음)
 /** 가로 벽: y 행 전체, gaps 의 x 만 개방 */
@@ -119,7 +119,7 @@ function autoVillage(rng, { w, h }, blocked, seeds, theme, n) {
 	// 랜드마크 = 중앙에서 가장 가까운 빈 칸
 	cand.sort((a, b) => (Math.abs(a.x - cx) + Math.abs(a.y - cy)) - (Math.abs(b.x - cx) + Math.abs(b.y - cy)))
 	const lm = cand.shift()
-	village.push({ pos: `${rowChar(lm.y)}${lm.x}`, asset: landmark })
+	village.push({ pos: posStr(lm.x, lm.y), asset: landmark })
 	// 나머지 = 셔플 후 기존 배치와 체비쇼프 거리≥2 우선, 부족하면 완화
 	shuffle(cand, rng)
 	const placed = [lm]
@@ -129,7 +129,7 @@ function autoVillage(rng, { w, h }, blocked, seeds, theme, n) {
 			if (placed.includes(c)) continue
 			if (!relax && placed.some(p => Math.max(Math.abs(p.x - c.x), Math.abs(p.y - c.y)) < 2)) continue
 			placed.push(c)
-			village.push({ pos: `${rowChar(c.y)}${c.x}`, asset: pool[Math.floor(rng() * pool.length)] })
+			village.push({ pos: posStr(c.x, c.y), asset: pool[Math.floor(rng() * pool.length)] })
 		}
 		if (village.length >= n) break
 	}
@@ -243,13 +243,13 @@ export const STAGES = {
 		// ai 미지정 = 기본형: 유저 난이도 노브 그대로 적용 (effectiveDifficulty 폴스루)
 		story: null,
 		village: [
-			{ pos: 'A3', asset: 'castle' },
-			{ pos: 'B1', asset: 'house' }, { pos: 'B5', asset: 'church' },
-			{ pos: 'C2', asset: 'treePine' }, { pos: 'C4', asset: 'tower' }, { pos: 'C6', asset: 'rocks' },
-			{ pos: 'D0', asset: 'houseSmall' }, { pos: 'D3', asset: 'mill' }, { pos: 'D6', asset: 'treePines' },
-			{ pos: 'E1', asset: 'well' }, { pos: 'E4', asset: 'houseTall' },
-			{ pos: 'F2', asset: 'towerTall' }, { pos: 'F5', asset: 'treePineTall' },
-			{ pos: 'G3', asset: 'tent' }
+			{ pos: '0_3', asset: 'castle' },
+			{ pos: '1_1', asset: 'house' }, { pos: '1_5', asset: 'church' },
+			{ pos: '2_2', asset: 'treePine' }, { pos: '2_4', asset: 'tower' }, { pos: '2_6', asset: 'rocks' },
+			{ pos: '3_0', asset: 'houseSmall' }, { pos: '3_3', asset: 'mill' }, { pos: '3_6', asset: 'treePines' },
+			{ pos: '4_1', asset: 'well' }, { pos: '4_4', asset: 'houseTall' },
+			{ pos: '5_2', asset: 'towerTall' }, { pos: '5_5', asset: 'treePineTall' },
+			{ pos: '6_3', asset: 'tent' }
 		]
 	}
 }
@@ -263,3 +263,52 @@ export const CHAPTERS = [
 	{ id: 'ch3', name: { en: 'Threeway Woods', ko: '세 갈래 숲' }, stages: CH3.map(s => s.id) },
 	{ id: 'ch4', name: { en: 'Volcanic Melee', ko: '화산 대혼전' }, stages: CH4.map(s => s.id) }
 ]
+
+//#region Local PvP 런타임 스테이지 조립 (SSOT — 캠페인 빌더 재사용, inline 재구현 금지)
+// 프리셋 지형(grid+blocked) 재사용 또는 커스텀 생성. teams(2~4)에 맞춰 코너 시드를
+// 재생성하고, deadCount 지정 시 무작위 바위 산개(시드 PRNG = 결정적·리매치 재현).
+export const LOCAL_LIMITS = { minSide: 5, maxSide: 50, minTeams: 2, maxTeams: 4, deadRatio: 0.25 }
+
+/** 커스텀 데드타일 상한 = 내부칸(테두리 제외)의 deadRatio. scatter 는 내부칸에만 놓기 때문. */
+export const maxDeadTiles = (w, h) =>
+	Math.max(0, Math.floor((w - 2) * (h - 2) * LOCAL_LIMITS.deadRatio))
+
+const cornerSeeds = (w, h, teams) =>
+	teams >= 4 ? seeds4(w, h) : teams === 3 ? seeds3(w, h) : seeds2(w, h)
+
+/**
+ * Local PvP 용 런타임 스테이지. 반환 형태는 STAGES 항목과 동일 → play.mjs 가 그대로 소비.
+ * @param {{w:number,h:number}} grid
+ * @param {{x:number,y:number}[]} [blocked] 프리셋 지형 (커스텀은 생략)
+ * @param {number} [deadCount] 무작위 데드타일 수 (커스텀; scatter)
+ * @param {number} teams 2~4
+ * @param {number} seed 결정적 무작위 시드 (UI 생성 — 리매치 시 같은 배치 재현)
+ * @param {string} [theme] 데코 테마 (기본 meadow)
+ * @param {{en:string,ko:string}} [name]
+ */
+export function buildLocalStage({ grid, blocked = [], deadCount = 0, teams, seed, theme = 'meadow', name } = {}) {
+	const rng = mulberry32((seed ?? 1) >>> 0)
+	const seeds = cornerSeeds(grid.w, grid.h, teams)
+	const seedCells = new Set(Object.values(seeds).flat().map(key))
+	const seedZone = new Set() // 시드 + 체비쇼프≤1 (scatter 회피 지대)
+	for (const s of Object.values(seeds).flat())
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++)
+			seedZone.add(`${s.x + dx},${s.y + dy}`)
+	// 프리셋 blocked 중 새 코너 시드와 충돌하는 것 제거 (다른 팀수로 재배치 시 안전)
+	let deadTiles = dedupe(blocked).filter(b => !seedCells.has(key(b)))
+	if (deadCount > 0) {
+		const avoid = new Set([...seedZone, ...deadTiles.map(key)])
+		deadTiles = [...deadTiles, ...scatter(rng, grid, deadCount, avoid)]
+	}
+	const playable = grid.w * grid.h - deadTiles.length
+	const villageN = Math.min(15, Math.max(0, Math.round(playable * 0.12)))
+	return {
+		id: 'local',
+		name: name ?? { en: 'Local Match', ko: '로컬 대전' },
+		grid, blocked: deadTiles, teams, seeds,
+		parTurns: Math.round(playable * 0.42) + (teams - 2) * 4,
+		story: null,
+		village: villageN > 0 ? autoVillage(rng, grid, deadTiles, seeds, theme, villageN) : []
+	}
+}
+//#endregion

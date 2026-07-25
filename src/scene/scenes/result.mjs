@@ -13,8 +13,8 @@ const NEXT = { easy: 'normal', normal: 'hard', hard: null }
 const PREV = { hard: 'normal', normal: 'easy', easy: null }
 
 export function resultScene(ctx) {
-	const { mode = 'pve', result = 'win', stage = 'stage-01', difficulty = 'normal', own = 0, enemy = 0, turns = 0, ranking = [], winnerTeam: localWinnerTeam = null, players } = ctx.params
-	if (mode === 'local') return localResultScene(ctx, { stage, difficulty, turns, ranking, winnerTeam: localWinnerTeam, players })
+	const { mode = 'pve', result = 'win', stage = 'stage-01', difficulty = 'normal', own = 0, enemy = 0, turns = 0, ranking = [], winnerTeam: localWinnerTeam = null, players, stageData, prefill } = ctx.params
+	if (mode === 'local') return localResultScene(ctx, { turns, ranking, winnerTeam: localWinnerTeam, players, stageData, prefill })
 
 	const win = result === 'win'
 	const parTurns = STAGES[stage]?.parTurns ?? 20
@@ -132,7 +132,7 @@ export function resultScene(ctx) {
 }
 
 // Local PvP 결과 — 순위(칸수 내림차순) + 무승부(공동 1위, map.winner()===null) 분기.
-function localResultScene(ctx, { stage, difficulty, turns, ranking, winnerTeam, players }) {
+function localResultScene(ctx, { turns, ranking, winnerTeam, players, stageData, prefill }) {
 	const draw = !winnerTeam
 	const winner = ranking.find(r => r.team === winnerTeam)
 	const HUE = { p3: 80, p4: 60 } // 보드 색 변주(play.mjs TEAM_HUE)와 일치 — p3/p4 스프라이트 재활용
@@ -153,7 +153,7 @@ function localResultScene(ctx, { stage, difficulty, turns, ranking, winnerTeam, 
 		<div class="btn-col">
 			<button class="btn primary" data-act="rematch">${t('result.rematch')}</button>
 			<button class="btn" data-act="seats">${t('result.changeSeats')}</button>
-			<button class="btn" data-act="select">${t('result.select')}</button>
+			<button class="btn" data-act="select">${t('result.newMatch')}</button>
 		</div>
 	`)
 
@@ -162,9 +162,9 @@ function localResultScene(ctx, { stage, difficulty, turns, ranking, winnerTeam, 
 	const jingle = playSfx('jingle-win')
 
 	onClick(el, 'data-act', act => {
-		if (act === 'rematch') ctx.go('play', { stage, difficulty, mode: 'local', players })
-		else if (act === 'seats') ctx.go('seats', { stage, difficulty, players })
-		else if (act === 'select') ctx.go('stage-select', { difficulty, mode: 'local' })
+		if (act === 'rematch') ctx.go('play', { mode: 'local', stageData, players, prefill }) // 같은 맵·구성 재대결
+		else if (act === 'seats') ctx.go('local-setup', { prefill })                          // 셋업 변경(프리필)
+		else if (act === 'select') ctx.go('local-setup', {})                                   // 새 셋업
 	})
 	return { el, cleanup() { try { jingle?.stop() } catch { /* 이미 정지됨 */ } } }
 }

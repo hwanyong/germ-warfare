@@ -25,25 +25,26 @@ const PHASE_SFX = {
 const CARTO = '/germ-warfare/assets/cartography'
 const ALL_ENGINE_TEAMS = [USERS.ID0, USERS.ID1, 'USER2', 'USER3'] // N:N 프리포올 최대 4팀
 const TEAM_HUE = { p1: 0, p2: 0, p3: 80, p4: 60 } // p3/p4 = 스프라이트 재활용 + 색 변주
-const rowChar = y => String.fromCharCode(65 + y) // A, B, C, ...
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
 export function playScene(ctx) {
-	const { stage = 'stage-01', difficulty = 'normal', mode = 'pve', players } = ctx.params
+	const { stage = 'stage-01', difficulty = 'normal', mode = 'pve', players, stageData: customStage, prefill } = ctx.params
 
-	// A6: 첫 플레이 = 튜토리얼 자동
-	if (!isTutorialDone()) {
+	// A6: 첫 플레이 = 튜토리얼 자동 (로컬 대전은 제외 — 캐주얼 멀티라 강제 튜토 부적합)
+	if (mode !== 'local' && !isTutorialDone()) {
 		queueMicrotask(() => ctx.go('tutorial', { returnTo: 'play', stage, difficulty, mode, players }))
 		return { el: div('scene') }
 	}
 
-	const stageData = STAGES[stage]
+	const stageData = customStage ?? STAGES[stage]
 	// 실제 AI 레벨 = 스테이지 기본(ai) ± 유저 노브 시프트 (진행 커브는 데이터가 결정)
 	const aiLevel = effectiveDifficulty(stageData.ai, difficulty)
 	const { w: W, h: H } = stageData.grid
-	const ROWS = Array.from({ length: H }, (_, y) => rowChar(y))
-	const posToXY = pos => ({ x: +pos.slice(1), y: pos.charCodeAt(0) - 65 })
-	const posStr = p => `${rowChar(p.y)}${p.x}`
+	const CELLS = W * H
+	const BIG = CELLS > 144 // 대형 커스텀 보드(>12×12) — 셀 애니 경량화 + AI 깊이탐색 클램프
+	// 타일 좌표 인코딩 = "y_x" 숫자 (letter-row 는 26칸 초과 시 특수문자·CSS 이스케이프로 깨짐 → 커스텀 대형보드 대응)
+	const posStr = p => `${p.y}_${p.x}`
+	const posToXY = pos => { const i = pos.indexOf('_'); return { y: +pos.slice(0, i), x: +pos.slice(i + 1) } }
 	const blockedSet = new Set((stageData.blocked ?? []).map(b => `${b.x},${b.y}`))
 	// N:N — 스테이지 팀 수 (기본 2). human = 첫 팀(p1), 나머지 전부 AI.
 	const nTeams = stageData.teams ?? 2
@@ -52,7 +53,7 @@ export function playScene(ctx) {
 	const HUMAN = ENGINE_TEAMS[0]
 	const viewOf = uid => VIEW_TEAMS[ENGINE_TEAMS.indexOf(uid)]
 	const ownerTeam = o => (ENGINE_TEAMS.includes(o) ? viewOf(o) : null)
-	const playerLabel = uid => t('seats.playerLabel', { n: ENGINE_TEAMS.indexOf(uid) + 1 })
+	const playerLabel = uid => t('localSetup.playerLabel', { n: ENGINE_TEAMS.indexOf(uid) + 1 })
 
 	// 좌석 컨트롤러(사람/AI) — Local PvP(mode='local', players 전달) 또는 기존 PvE(p1=사람, 나머지 AI) 폴백.
 	// CONTROLLER 는 가변 — Pause 중 기권 시 해당 좌석만 AI(easy 고정)로 실시간 전환.
@@ -85,10 +86,10 @@ export function playScene(ctx) {
 		</div>
 		<div class="turn-label" id="turn"></div>
 		<div class="board" id="board" style="grid-template-columns:repeat(${W},1fr);grid-template-rows:repeat(${H},1fr);aspect-ratio:${W}/${H};--ar:${(W / H).toFixed(4)}">
-			${ROWS.map((r, y) => Array.from({ length: W }, (_, x) =>
+			${Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) =>
 				blockedSet.has(`${x},${y}`)
-					? `<div class="tile frame-thin blocked" data-pos="${r}${x}"><img class="bld rock" src="${CARTO}/rocks.png" alt="" /></div>`
-					: `<div class="tile frame-thin" data-pos="${r}${x}"></div>`).join('')).join('')}
+					? `<div class="tile frame-thin blocked" data-pos="${y}_${x}"><img class="bld rock" src="${CARTO}/rocks.png" alt="" /></div>`
+					: `<div class="tile frame-thin" data-pos="${y}_${x}"></div>`).join('')).join('')}
 			<div class="fx-layer"></div>
 		</div>
 		<div class="score-panel">
@@ -176,13 +177,13 @@ export function playScene(ctx) {
 	// 이동/생성 후: 뒤집힌 칸 애니 + 점령된 마을 파괴 (+감염 시 감염음 1회)
 	function postMove(before, exclude) {
 		let flipped = 0
-		ROWS.forEach((r, y) => { for (let x = 0; x < W; x++) {
-			const pos = `${r}${x}`
+		for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+			const pos = `${y}_${x}`
 			const now = map.fields[y][x]
 			const was = before[y][x]
 			if (now && was && now !== was && pos !== exclude) { flipAnim(pos); flipped++ } // 감염 뒤집기
 			if (now && buildings[pos] && !buildings[pos].destroyed) destroyBuilding(pos) // 점령 파괴
-		} })
+		}
 		if (flipped) sfx('sfx-infect')
 	}
 
@@ -194,18 +195,22 @@ export function playScene(ctx) {
 		if (!owner) { cell?.remove(); return }
 		if (!cell) {
 			cell = document.createElement('div')
-			const wob = Math.floor(Math.random() * WOBBLE_VARIANTS)
-			cell.className = `cell w${wob}`
-			cell.dataset.wob = wob
-			cell.style.setProperty('--bd', `${(2.6 + Math.random() * 1.8).toFixed(2)}s`)
-			cell.style.setProperty('--bdelay', `${(Math.random() * -4).toFixed(2)}s`)
+			if (BIG) {
+				cell.className = 'cell lite' // 대형 보드: wobble/breathe 애니 생략(성능)
+			} else {
+				const wob = Math.floor(Math.random() * WOBBLE_VARIANTS)
+				cell.className = `cell w${wob}`
+				cell.dataset.wob = wob
+				cell.style.setProperty('--bd', `${(2.6 + Math.random() * 1.8).toFixed(2)}s`)
+				cell.style.setProperty('--bdelay', `${(Math.random() * -4).toFixed(2)}s`)
+			}
 			t.appendChild(cell)
 		}
 		if (cell.dataset.owner !== owner) {
 			// 오너 변경(감염 포함): hue 를 반드시 재설정 — 이전 팀 hue 잔존 시 색이 안 바뀌어 보임
 			cell.dataset.owner = owner
 			cell.style.filter = TEAM_HUE[owner]
-				? `url(#germ-wobble-${cell.dataset.wob}) hue-rotate(${TEAM_HUE[owner]}deg)`
+				? (BIG ? `hue-rotate(${TEAM_HUE[owner]}deg)` : `url(#germ-wobble-${cell.dataset.wob}) hue-rotate(${TEAM_HUE[owner]}deg)`)
 				: '' // p1/p2 는 클래스(w{n}) filter 로 복원
 		}
 		if (pop) cell.animate(
@@ -214,7 +219,7 @@ export function playScene(ctx) {
 		)
 	}
 	function syncAll() {
-		ROWS.forEach((r, y) => { for (let x = 0; x < W; x++) syncTile(`${r}${x}`) })
+		for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) syncTile(`${y}_${x}`)
 		ENGINE_TEAMS.forEach(uid => { scoreEls[viewOf(uid)].textContent = String(map.count[uid]).padStart(2, '0') })
 	}
 	function reset() {
@@ -237,9 +242,9 @@ export function playScene(ctx) {
 		})
 	}
 	function markSelectable(myView) {
-		ROWS.forEach((r, y) => { for (let x = 0; x < W; x++) {
-			tileEl(`${r}${x}`).classList.toggle('selectable', ownerTeam(map.fields[y][x]) === myView)
-		} })
+		for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+			tileEl(`${y}_${x}`).classList.toggle('selectable', ownerTeam(map.fields[y][x]) === myView)
+		}
 	}
 
 	// ---- human 턴 (uid = 지금 두는 사람의 엔진 팀) ----
@@ -373,7 +378,9 @@ export function playScene(ctx) {
 	async function playAiMove(uid) {
 		await sleep(450)
 		if (!running) return // 대기 중 씬 이탈 — 죽은 씬에서 수(애니+사운드) 두지 않음
-		const mv = pickMove(map, uid, AI_LEVEL[uid], aiRng)
+		// 대형 보드: hard(negamax depth3)는 이동 조합 폭발 → 응답성 위해 greedy(normal)로 클램프
+		const lvl = BIG && AI_LEVEL[uid] === 'hard' ? 'normal' : AI_LEVEL[uid]
+		const mv = pickMove(map, uid, lvl, aiRng)
 		if (mv) await execMove(viewOf(uid), uid, mv.from, mv.to)
 	}
 
@@ -413,7 +420,7 @@ export function playScene(ctx) {
 			const ranking = ENGINE_TEAMS
 				.map(uid => ({ team: viewOf(uid), name: playerLabel(uid), cells: map.count[uid], controller: CONTROLLER[uid] }))
 				.sort((a, b) => b.cells - a.cells)
-			ctx.go('result', { mode, stage, difficulty, turns, ranking, winnerTeam: winnerUid ? viewOf(winnerUid) : null, players })
+			ctx.go('result', { mode, stage, difficulty, turns, ranking, winnerTeam: winnerUid ? viewOf(winnerUid) : null, players, stageData: customStage, prefill })
 			return
 		}
 		const own = map.count[HUMAN]
@@ -499,7 +506,7 @@ export function playScene(ctx) {
 		onClick(ov, 'data-p', p => {
 			if (p === 'resume') { paused = false; ov.remove() }
 			else if (p === 'settings') ctx.go('settings')
-			else if (p === 'quit') ctx.go('stage-select', { difficulty, mode })
+			else if (p === 'quit') ctx.go(mode === 'local' ? 'local-setup' : 'stage-select', mode === 'local' ? { prefill } : { difficulty })
 		})
 		onClick(ov, 'data-forfeit', uid => {
 			CONTROLLER[uid] = 'ai'

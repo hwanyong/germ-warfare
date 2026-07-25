@@ -100,12 +100,17 @@
 }
 .pass-overlay .logo { font-family: var(--font-title); font-size: 1.6rem; }
 
-/* Local PvP — 좌석 설정(Seats) */
-.seat-list { width: min(94vw, 30em); gap: .8em; }
-.seat-row { display: flex; align-items: center; gap: .6em; flex-wrap: wrap; justify-content: space-between; width: 100%; padding: .4em 0; border-bottom: 1px solid #0001; }
-.seat-row:last-child { border-bottom: 0; }
-.seat-name { flex: 1 1 auto; text-align: left; font-family: var(--font-body); font-size: 1.15rem; }
-.seat-row .btn { font-size: 1rem; padding: .2em .6em .1em; min-height: 36px; min-width: 36px; }
+/* Local PvP — 셋업(LocalSetup): 인원 스테퍼 + 맵 프리셋/커스텀 */
+.local-setup { justify-content: flex-start; padding-bottom: 0; }
+.setup-card { width: min(94vw, 30em); }
+.setup-row { display: flex; align-items: center; justify-content: center; gap: .5em .8em; flex-wrap: wrap; }
+.stepper { display: inline-flex; align-items: center; gap: .35em; }
+.stepper .btn { font-size: 1.3rem; line-height: 1; padding: 0; width: 1.9em; min-width: 1.9em; height: 1.9em; min-height: 1.9em; }
+.stepper .num { min-width: 1.6em; text-align: center; font-size: 1.25rem; }
+.map-tabs { margin-top: .1em; }
+.ls-panel { width: min(94vw, 46em); }
+.ls-panel.card { width: min(94vw, 30em); }
+.ls-map .sub { font-size: .8em; letter-spacing: 0; }
 
 /* Local PvP — 결과 순위 */
 .rank-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: .5em; }
