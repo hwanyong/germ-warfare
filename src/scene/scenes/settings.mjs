@@ -1,24 +1,14 @@
-// Settings 씬 — 옵션 + 언어(영/한) 선택. Title·Pause 진입, back 복귀.
+// Settings 씬(메뉴) — 언어·사운드·모션 + 튜토리얼/크레딧. **Title 에서만 진입**.
+// 인게임 설정은 여기로 오지 않는다 — play 의 Pause 설정 오버레이(play.mjs)가 별도로 처리
+// (씬으로 오면 back 시 play 재생성 = 게임 재시작). 설정 컨트롤은 settings-panel.mjs 공유.
 import { div, onClick } from '../dom.mjs'
-import { t, getLang, setLang } from '../../i18n/index.mjs'
-import { setMuted, isMuted, resumeAudio } from '../../audio/audio.mjs'
+import { t } from '../../i18n/index.mjs'
+import { settingsControls } from '../settings-panel.mjs'
 
 export function settingsScene(ctx) {
-	const lang = getLang()
-	const muted = isMuted()
 	const el = div('scene', `
 		<div class="logo" style="font-size:2rem">${t('settings.title')}</div>
-		<div class="card">
-			<div class="btn-row"><span>${t('settings.language')}</span>
-				<button class="btn" data-lang="en"${lang === 'en' ? ' aria-selected="true"' : ''}>English</button>
-				<button class="btn" data-lang="ko"${lang === 'ko' ? ' aria-selected="true"' : ''}>한국어</button>
-			</div>
-			<div class="btn-row"><span>${t('settings.sound')}</span>
-				<button class="btn" data-sound="on"${muted ? '' : ' aria-selected="true"'}>${t('settings.on')}</button>
-				<button class="btn" data-sound="off"${muted ? ' aria-selected="true"' : ''}>${t('settings.off')}</button>
-			</div>
-			<div class="btn-row"><span>${t('settings.motion')}</span> <button class="btn">${t('settings.coming')}</button></div>
-		</div>
+		<div id="settings-body"></div>
 		<div class="btn-row">
 			<button class="btn" data-act="tutorial">${t('settings.tutorialAgain')}</button>
 			<button class="btn" data-act="credits">${t('settings.credits')}</button>
@@ -27,11 +17,10 @@ export function settingsScene(ctx) {
 			<button class="btn" data-act="back">${t('settings.back')}</button>
 		</div>
 	`)
-	// 재마운트는 replace — go() 는 스택에 settings 를 중복 push 해 back 이 제자리걸음(즉각 복귀 안 되는 버그)
-	onClick(el, 'data-lang', l => { setLang(l); ctx.replace('settings') }) // 언어 변경 → 재마운트
-	onClick(el, 'data-sound', v => { resumeAudio(); setMuted(v === 'off'); ctx.replace('settings') }) // resumeAudio = iOS 인터럽션 복구 겸
+	// 언어 변경 시 주변 텍스트까지 갱신하려면 씬 재마운트 — replace(스택 중복 push 방지)
+	el.querySelector('#settings-body').replaceWith(settingsControls(() => ctx.replace('settings')))
 	onClick(el, 'data-act', act => {
-		if (act === 'back') ctx.back()
+		if (act === 'back') ctx.back()               // Title 에서만 진입 → title 복귀
 		else if (act === 'tutorial') ctx.go('tutorial', {})
 		else if (act === 'credits') ctx.go('credits')
 	})

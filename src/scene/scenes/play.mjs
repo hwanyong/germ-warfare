@@ -11,6 +11,7 @@ import { isTutorialDone } from '../../storage/progress.mjs'
 import { t, getLang } from '../../i18n/index.mjs'
 import { playSfx, playBgm } from '../../audio/audio.mjs'
 import { mascotSrc, frozenMascot } from '../mascot.mjs'
+import { settingsControls } from '../settings-panel.mjs'
 
 // FX 단계 → 사운드 (playMove/playJump 공용). 귀환·트랙터빔은 기존 소리 변조 재활용.
 const PHASE_SFX = {
@@ -505,7 +506,7 @@ export function playScene(ctx) {
 		`)
 		onClick(ov, 'data-p', p => {
 			if (p === 'resume') { paused = false; ov.remove() }
-			else if (p === 'settings') ctx.go('settings')
+			else if (p === 'settings') { ov.remove(); openSettingsOverlay() } // 인게임 설정 = 모달(게임 보존), 씬 전환 아님
 			else if (p === 'quit') ctx.go(mode === 'local' ? 'local-setup' : 'stage-select', mode === 'local' ? { prefill } : { difficulty })
 		})
 		onClick(ov, 'data-forfeit', uid => {
@@ -517,6 +518,20 @@ export function playScene(ctx) {
 			ov.remove()
 			if (pendingHumanUid === uid) cancelHuman?.() // 지금 이 좌석 차례 대기 중이면 즉시 AI로 넘김
 		})
+		el.appendChild(ov)
+	}
+
+	// 인게임 설정 = play 위 모달 오버레이 (씬 파괴 없음 → 닫으면 일시정지 메뉴로 복귀, 게임 그대로).
+	// 튜토리얼/크레딧은 게임 중 부적합이라 제외 — 언어/사운드/모션만.
+	function openSettingsOverlay() {
+		const ov = div('pause-overlay', `
+			<div class="logo">${t('settings.title')}</div>
+			<div id="settings-body"></div>
+			<div class="btn-row"><button class="btn" data-back="1">${t('settings.back')}</button></div>
+		`)
+		// 언어 변경 시 오버레이 텍스트까지 갱신하려면 오버레이 전체 재렌더
+		ov.querySelector('#settings-body').replaceWith(settingsControls(() => { ov.remove(); openSettingsOverlay() }))
+		onClick(ov, 'data-back', () => { ov.remove(); openPause() }) // 설정 닫기 → 일시정지 메뉴 복귀
 		el.appendChild(ov)
 	}
 	onClick(el, 'data-act', act => { if (act === 'pause') { paused = true; openPause() } })
