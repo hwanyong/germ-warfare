@@ -6,7 +6,11 @@ import { t } from '../../i18n/index.mjs'
 
 const A = '/germ-warfare/assets'
 
-const TIPS = () => [t('title.tip1'), t('title.tip2'), t('title.tip3')]
+// 기능 안내(tip1·2·4·5) + 메뉴 안내(tip6·7·8) + Settings 숨은 기능(tip3·9·10) — docs/roadmap.md 참고.
+const TIPS = () => [
+	t('title.tip1'), t('title.tip2'), t('title.tip3'), t('title.tip4'), t('title.tip5'),
+	t('title.tip6'), t('title.tip7'), t('title.tip8'), t('title.tip9'), t('title.tip10'),
+]
 
 export function titleScene(ctx) {
 	const el = div('scene title-scene', `

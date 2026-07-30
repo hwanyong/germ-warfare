@@ -67,7 +67,8 @@
 	padding: .4em .75em;
 	font-size: .78em;
 	line-height: 1.25;
-	max-width: 13em;
+	min-width: 13em;
+	max-width: 20em; /* 짧은 문장은 13em 밑으로 안 쪼그라들고, 긴 문장은 20em까지 auto로 늘어남 */
 	text-align: center;
 }
 .speech-bubble[data-owner="p2"] .bubble-body { border-image-source: var(--frame-bubble-p2); }
