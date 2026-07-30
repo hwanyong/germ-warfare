@@ -23,14 +23,26 @@ Kenney 에셋은 CC0라 출처 표기 의무는 없으나 감사 표기한다.
 - **ambientCG "Paper 001"** — CC0. https://ambientcg.com/view?id=Paper001
 - (기존 출처 불명 텍스처 `0111b-...jpg`는 어그리게이터 경유·라이선스 미확인이라 폐기, CC0로 교체됨.)
 
-## 폰트 (Google Fonts — SIL Open Font License 1.1)
+## 폰트 (self-host, SIL Open Font License 1.1)
 
-- **Orbitron**, **Gugi**, **Dongle** — OFL 1.1. https://fonts.google.com
+Google Fonts CDN 미사용 — `google/fonts` GitHub 리포(각 폰트 저작권자의 1차 소스)에서
+원본을 받아 무손실 변환해 `public/assets/fonts/` 에서 직접 서빙(ADR-011).
+
+| 폰트 | 저작권자 | RFN | 파일 |
+|---|---|---|---|
+| Dongle | The Dongle Project Authors | 없음 | `Dongle-{Light,Regular,Bold}.woff2` |
+| Gugi | TAE System & Typefaces Co. | 없음 | `Gugi-Regular.woff2` |
+| Orbitron | The Orbitron Project Authors | 있음 — self-host 시 내부적으로 `GW Orbitron` 개명 | `GW-Orbitron.woff2` |
+
+라이선스 원문·조사 근거·재현 커맨드는 **[FONT-LICENSE-AUDIT.md](FONT-LICENSE-AUDIT.md)**
+(외부에서 검증 가능, Credits 화면에서도 링크). 각 폰트의 OFL 라이선스 전문은
+`public/assets/fonts/*-OFL.txt` 에 동봉.
 
 ## 앱 내 Credits 표기(요약)
 
 ```
 Germ Warfare (세균전)
 © 2026 Hwanyong Yoo (UHD)
-Art: Kenney (kenney.nl, CC0)   Fonts: Google Fonts (OFL)
+Art: Kenney (kenney.nl, CC0)   Fonts: Dongle · Gugi · Orbitron (OFL, self-hosted)
+License audit: FONT-LICENSE-AUDIT.md
 ```

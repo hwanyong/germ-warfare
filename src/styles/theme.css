@@ -4,6 +4,45 @@
  * 에셋 경로는 base(/germ-warfare/)를 고정 접두. vite dev/prod 모두 동일하게 동작.
  * (repo 이름 바뀌면 이 파일의 /germ-warfare/ 접두만 일괄 치환) */
 
+/* 폰트 — self-host (ADR-011, docs/FONT-LICENSE-AUDIT.md).
+ * Orbitron 은 SIL OFL Reserved Font Name 보유 → 내부 name 테이블 전면 "GW Orbitron" 개명본.
+ * 저작권/라이선스 고지: public/assets/fonts/*-OFL.txt */
+@font-face {
+	font-family: 'Dongle';
+	font-weight: 300;
+	font-style: normal;
+	font-display: swap;
+	src: url(/germ-warfare/assets/fonts/Dongle-Light.woff2) format('woff2');
+}
+@font-face {
+	font-family: 'Dongle';
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+	src: url(/germ-warfare/assets/fonts/Dongle-Regular.woff2) format('woff2');
+}
+@font-face {
+	font-family: 'Dongle';
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+	src: url(/germ-warfare/assets/fonts/Dongle-Bold.woff2) format('woff2');
+}
+@font-face {
+	font-family: 'Gugi';
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+	src: url(/germ-warfare/assets/fonts/Gugi-Regular.woff2) format('woff2');
+}
+@font-face {
+	font-family: 'GW Orbitron';
+	font-weight: 400 900;
+	font-style: normal;
+	font-display: swap;
+	src: url(/germ-warfare/assets/fonts/GW-Orbitron.woff2) format('woff2');
+}
+
 :root {
 	/* 팔레트 */
 	--ink: #2a2a2a;
@@ -17,6 +56,10 @@
 	--frame-thin: url(/germ-warfare/assets/frame/thin.png);
 	--frame-circle: url(/germ-warfare/assets/frame/circle.png);
 	--frame-square: url(/germ-warfare/assets/frame/square.png);
+	--frame-bubble-p1: url(/germ-warfare/assets/frame/bubble-p1.png);
+	--frame-bubble-p2: url(/germ-warfare/assets/frame/bubble-p2.png);
+	--bubble-tail-p1: url(/germ-warfare/assets/frame/bubble-tail-p1.png);
+	--bubble-tail-p2: url(/germ-warfare/assets/frame/bubble-tail-p2.png);
 
 	/* 세균 말 */
 	--cell-p1: url(/germ-warfare/assets/cell-green.png);
@@ -24,8 +67,8 @@
 	--cell-p1-sm: url(/germ-warfare/assets/cell-green-sm.png);
 	--cell-p2-sm: url(/germ-warfare/assets/cell-pink-sm.png);
 
-	/* 타이포 */
-	--font-num: 'Orbitron', sans-serif;   /* 점수/숫자 */
+	/* 타이포 (self-host, ADR-011) */
+	--font-num: 'GW Orbitron', sans-serif;   /* 점수/숫자 */
 	--font-title: 'Gugi', sans-serif;      /* 타이틀 */
 	--font-body: 'Dongle', 'Arial', sans-serif; /* 본문 */
 }

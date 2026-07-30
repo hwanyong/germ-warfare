@@ -10,6 +10,7 @@ import { CRITICAL_IMAGES, DEFERRED_IMAGES } from './loading/assets.mjs'
 import { preloadAll, preloadInBackground } from './loading/preload.mjs'
 import { createManager } from './scene/index.mjs'
 import { installAudio, unlockOnGesture, playSfx, playBgm, stopBgm } from './audio/audio.mjs'
+import { initUpdater } from './pwa/update.mjs'
 
 // 씬 → BGM 매핑: play = 전투 전용, result = 무음(징글만), 나머지 = 메인 테마 (ADR-009)
 const SCENE_BGM = { play: 'bgm-battle', result: null }
@@ -51,5 +52,7 @@ async function boot() {
 	// 전 씬 공통 버튼음 — 모든 버튼이 .btn 클래스라 문서 위임 1곳으로 배선
 	document.addEventListener('click', e => { if (e.target.closest('.btn')) playSfx('sfx-button') })
 }
+
+initUpdater() // SW 등록 — Settings 씬의 "적용하고 재시작"이 forceUpdate() 로 강제 리셋 (ADR-012)
 
 boot()

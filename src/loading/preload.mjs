@@ -30,13 +30,12 @@ export function preloadInBackground(images) {
 	for (const u of images) preloadImage(u)
 }
 
-/** UI 문자열 글리프의 폰트 서브셋 예열 (fire-and-forget).
- * 구글폰트 한글 패밀리는 unicode-range 서브셋 지연로드라, 게임 중 처음 보는 글리프가
- * DOM 에 꽂히는 순간 서브셋 로드가 시작되고, 완료 시 문서 전체 'Fonts changed'
- * 재레이아웃·재페인트가 터진다(hover 배지가 대표 트리거 — 보드 전체 깜빡임).
- * 현재 언어 사전 전체를 미리 로드해 이를 무력화한다. 패밀리/웨이트는 theme.css --font-* 스택과 동기. */
+/** UI 문자열 글리프의 폰트 예열 (fire-and-forget, self-host 단일 파일 — ADR-011).
+ * 첫 렌더에서야 폰트 네트워크 요청이 시작되면 그 시점에 'Fonts changed' 재레이아웃·
+ * 재페인트가 터진다(hover 배지가 대표 트리거 — 보드 전체 깜빡임). 현재 언어 사전 전체를
+ * 미리 로드해 무력화한다. 패밀리/웨이트는 theme.css --font-* 스택과 동기. */
 export function warmFonts(text) {
 	if (!document.fonts?.load) return
-	for (const font of ['1em Dongle', '1em Gugi', '700 1em Orbitron'])
+	for (const font of ['1em Dongle', '1em Gugi', '700 1em "GW Orbitron"'])
 		document.fonts.load(font, `${text}0123456789`).catch(() => {})
 }

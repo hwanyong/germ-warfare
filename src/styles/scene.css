@@ -53,6 +53,59 @@
 	align-items: center;
 }
 
+/* 말풍선 (src/scene/speechBubble.mjs) — 테두리는 border-image(내용 길이에 맞춰 신축),
+ * 꼬리는 별도 요소라 4변 어디든 자유 배치. 채움은 투명이 아니라 paper.jpg(불투명) — 캐릭터 위에
+ * 겹쳐도 글씨 가독성 유지. data-owner="p1|p2" 로 테두리·꼬리 색 스왑.
+ * z-index — 걷는 마스코트 두 레인이 화면에서 스쳐 지나갈 때, 뒤에 그려지는(DOM 늦은) 쪽 캐릭터가
+ * 앞선 쪽 말풍선을 덮는 사고를 막는 안전망(1차 방어는 title.mjs 의 레인 세로 간격). */
+.speech-bubble { position: absolute; width: max-content; z-index: 2; transform-origin: 50% 100%; }
+.speech-bubble.above { bottom: 100%; left: 50%; transform: translateX(-50%); }
+.speech-bubble .bubble-body {
+	border-image: var(--frame-bubble-p1) 48 / .5em / 0;
+	background: #efeee7 url(/germ-warfare/assets/paper.jpg) repeat;
+	background-size: 4em;
+	padding: .4em .75em;
+	font-size: .78em;
+	line-height: 1.25;
+	max-width: 13em;
+	text-align: center;
+}
+.speech-bubble[data-owner="p2"] .bubble-body { border-image-source: var(--frame-bubble-p2); }
+
+/* 꼬리 = 위치(바깥 요소, translate만) + 방향(안쪽 요소, rotate만) 분리 — 합성 시 축 꼬임 방지.
+ * 몸통과 만나는 이음매가 겹치도록(-.55em) 박아 넣어 몸통 테두리와 시각적으로 하나가 되게 한다. */
+.bubble-tail { position: absolute; width: .77em; height: 1em; }
+.bubble-tail[data-side="bottom"] { bottom: -.55em; left: var(--tail-offset, 50%); transform: translateX(-50%); }
+.bubble-tail[data-side="top"]    { top: -.55em; left: var(--tail-offset, 50%); transform: translateX(-50%); }
+.bubble-tail[data-side="left"]   { left: -.55em; top: var(--tail-offset, 50%); transform: translateY(-50%); }
+.bubble-tail[data-side="right"]  { right: -.55em; top: var(--tail-offset, 50%); transform: translateY(-50%); }
+.bubble-tail::after {
+	content: '';
+	position: absolute; inset: 0;
+	background: var(--bubble-tail-p1) center / contain no-repeat;
+}
+.speech-bubble[data-owner="p2"] .bubble-tail::after { background-image: var(--bubble-tail-p2); }
+.bubble-tail[data-side="top"]::after   { transform: rotate(180deg); }
+.bubble-tail[data-side="left"]::after  { transform: rotate(90deg); }
+.bubble-tail[data-side="right"]::after { transform: rotate(-90deg); }
+
+/* 등장/퇴장 = "버블링"(팝) — 확 커졌다 안착 / 커졌다 사라짐. 말풍선이 캐릭터 머리에서 톡 튀어나오는
+ * 느낌을 주려고 scale 원점은 꼬리 쪽(50% 100%, 위의 transform-origin). 3.7초 유지는 JS(speechBubble.mjs)
+ * 쪽 타이머 책임 — 여기 CSS 는 팝인/팝아웃 곡선만 담당. */
+.speech-bubble.pop-in  { animation: bubble-pop-in .32s cubic-bezier(.34, 1.56, .64, 1) both; }
+.speech-bubble.pop-out { animation: bubble-pop-out .26s ease-in both; }
+@keyframes bubble-pop-in {
+	0%   { transform: translateX(-50%) scale(0); opacity: 0; }
+	100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+@keyframes bubble-pop-out {
+	0%   { transform: translateX(-50%) scale(1); opacity: 1; }
+	100% { transform: translateX(-50%) scale(0); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.speech-bubble.pop-in, .speech-bubble.pop-out { animation: none; }
+}
+
 /* Play HUD + Pause — in-flow 헤더 (fixed 금지: 가로모드에서 보드/턴라벨과 겹치는 원인이었다).
  * 보드와 같은 폭 상한으로 보드 위에 정렬. 좁은 화면은 줄바꿈, 스테이지명은 말줄임. */
 .play-top {
@@ -90,6 +143,11 @@
 	display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8em;
 }
 .pause-overlay .logo { font-family: var(--font-title); font-size: 1.8rem; }
+.pause-overlay .msg { max-width: 26em; text-align: center; line-height: 1.5; padding: 0 1em; font-family: var(--font-body); }
+
+/* QR 기기간 이전(settings.mjs, qr-transfer.mjs) — pause-overlay 내부 콘텐츠 */
+.qr-canvas { max-width: 80vw; border-radius: .3em; }
+.qr-video { width: min(80vw, 22em); border-radius: .3em; }
 
 /* Local PvP — 좌석 전환("기기 넘기기") 화면. pause-overlay 위에 뜰 일이 없어 z-index 는 같은 층. */
 .pass-overlay {
@@ -146,33 +204,39 @@
 
 /* Back 버튼 규약: 좌상단 fixed 금지 — 각 씬의 하단 액션 버튼 근처(.btn-row)에 인라인 배치(일관성) */
 
-/* ---------- Title 데코 (마스코트·우주선 + 간단 애니) ---------- */
+/* ---------- Title 데코 (마스코트·우주선 + 간단 애니 + 말풍선) ---------- */
 .title-scene { position: relative; overflow: hidden; }
 .title-scene > :not(.title-deco) { position: relative; z-index: 1; }
 .title-deco { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-.title-deco img { position: absolute; }
-.t-ship { width: 4.2em; filter: drop-shadow(0 .25em .15em #0000002e); }
-.t-ship-p1 { left: 12%; top: 13%; animation: t-float 3.2s ease-in-out infinite; }
-.t-ship-p2 { right: 10%; top: 24%; width: 3.4em; animation: t-float 2.7s ease-in-out infinite reverse; }
+/* 우주선·마스코트 모두 "래퍼(위치·이동 애니) + img(크기·시각효과)" 2단 구조 — 말풍선을 래퍼 안에
+ * 동행시키기 위한 컨테이너가 필요하고, 좌우반전(scaleX)이 말풍선 글씨까지 거울상 만드는 것도 방지. */
+.t-ship-wrap { position: absolute; }
+.t-ship-wrap.t-ship-p1 { left: 12%; top: 13%; animation: t-float 3.2s ease-in-out infinite; }
+.t-ship-wrap.t-ship-p2 { right: 10%; top: 24%; animation: t-float 2.7s ease-in-out infinite reverse; }
+.t-ship { width: 4.2em; display: block; filter: drop-shadow(0 .25em .15em #0000002e); }
+.t-ship-wrap.t-ship-p2 .t-ship { width: 3.4em; }
 @keyframes t-float {
 	0%, 100% { transform: translateY(0) rotate(-2deg); }
 	50%      { transform: translateY(-.5em) rotate(2deg); }
 }
-/* 걷는 마스코트 — 화면 하단 횡단. -right 스프라이트 = 우향 걷기, p2 는 반전해 좌향 */
-.t-walk { height: 3em; left: 0; bottom: max(1em, env(safe-area-inset-bottom)); }
-.t-walk-p1 { animation: t-walk-r 26s linear infinite; }
-.t-walk-p2 {
-	height: 2.6em;
-	bottom: calc(max(1em, env(safe-area-inset-bottom)) + 3.6em);
+/* 걷는 마스코트 — 화면 하단 횡단, 두 레인. 세로 간격(+7.6em)은 마스코트 키(~3em)만이 아니라
+ * 그 위에 팝업하는 말풍선 높이(~3em)까지 감안한 값 — 안 그러면 위 레인 캐릭터가 아래 레인
+ * 말풍선을 가리는 사고가 난다(실측: docs/roadmap.md 작업 기록). */
+.t-walk-wrap { position: absolute; left: 0; bottom: max(1em, env(safe-area-inset-bottom)); }
+.t-walk-wrap.t-walk-p1 { animation: t-walk-r 26s linear infinite; }
+.t-walk-wrap.t-walk-p2 {
+	bottom: calc(max(1em, env(safe-area-inset-bottom)) + 7.6em);
 	animation: t-walk-l 34s linear infinite;
 }
+.t-walk { height: 3em; display: block; }
+.t-walk-wrap.t-walk-p2 .t-walk { height: 2.6em; transform: scaleX(-1); } /* -right 스프라이트 반전 = 좌향 */
 @keyframes t-walk-r {
 	from { transform: translateX(-5em); }
 	to   { transform: translateX(100vw); }
 }
 @keyframes t-walk-l {
-	from { transform: translateX(100vw) scaleX(-1); }
-	to   { transform: translateX(-5em) scaleX(-1); }
+	from { transform: translateX(100vw); }
+	to   { transform: translateX(-5em); }
 }
 .title-scene .logo { animation: logo-breathe 3.6s ease-in-out infinite; }
 @keyframes logo-breathe {
@@ -180,9 +244,9 @@
 	50%      { transform: scale(1.035) rotate(.6deg); }
 }
 @media (prefers-reduced-motion: reduce) {
-	.title-scene .logo, .t-ship, .t-walk { animation: none; }
-	.t-walk-p1 { transform: translateX(18vw); }         /* 우향 원본 */
-	.t-walk-p2 { transform: translateX(70vw) scaleX(-1); } /* 반전 = 좌향 */
+	.title-scene .logo, .t-ship-wrap, .t-walk-wrap { animation: none; }
+	.t-walk-wrap.t-walk-p1 { transform: translateX(18vw); }  /* 우향 원본 */
+	.t-walk-wrap.t-walk-p2 { transform: translateX(70vw); }  /* 좌향은 내부 img 반전으로 처리됨 */
 }
 
 /* 스테이지 선택 (캠페인 챕터 그리드) */

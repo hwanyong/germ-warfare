@@ -12,9 +12,9 @@ const dist = (a, b) => { const A = xy(a), B = xy(b); return Math.max(Math.abs(A.
 
 // 시나리오: p1=(0,0), p2=(2,2). 3 레슨 = 복제 → 이동 → 감염.
 const LESSONS = [
-	{ source: idx(0, 0), target: idx(1, 1), selKey: 'tutorial.sel1', actKey: 'tutorial.clone' }, // 복제(거리1)
+	{ source: idx(0, 0), target: idx(1, 0), selKey: 'tutorial.sel1', actKey: 'tutorial.clone' }, // 복제(거리1) — p2(2,2)와 비인접
 	{ source: idx(0, 0), target: idx(2, 0), selKey: 'tutorial.sel2', actKey: 'tutorial.move' },  // 이동(거리2)
-	{ source: idx(1, 1), target: idx(2, 1), selKey: 'tutorial.sel3', actKey: 'tutorial.infect' } // 감염((2,1) 옆 (2,2)=적)
+	{ source: idx(2, 0), target: idx(2, 1), selKey: 'tutorial.sel3', actKey: 'tutorial.infect' } // 감염((2,1) 옆 (2,2)=적)
 ]
 
 export function tutorialScene(ctx) {

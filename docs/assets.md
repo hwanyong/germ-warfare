@@ -19,7 +19,7 @@ public/assets/
   ui/            uipack.svg (Kenney UI 벡터)
   textures: paper.jpg
 ```
-> 코드 배선 중인 활성 에셋: cell-green/pink, ship/ship-p1·p2, laser/beam-p1·p2·burst, frame/thin·circle·square, cursor/pointer3D·hand, crosshair/aim-move·clone, paper, mascot/germ-green·pink(플레이 HUD 턴표시·result), germ-green·pink-right(타이틀 데코), germ-green-fast(승리 씬) — `src/scene/mascot.mjs`. 나머지는 라이브러리(P0에서 배경/이펙트로 사용 예정).
+> 코드 배선 중인 활성 에셋: cell-green/pink, ship/ship-p1·p2, laser/beam-p1·p2·burst, frame/thin·circle·square·bubble-p1·p2·bubble-tail-p1·p2, cursor/pointer3D·hand, crosshair/aim-move·clone, paper, mascot/germ-green·pink(플레이 HUD 턴표시·result), germ-green·pink-right(타이틀 데코+마스코트/우주선 4마리 말풍선 순환 대상), germ-green-fast(승리 씬) — `src/scene/mascot.mjs`, `src/scene/speechBubble.mjs`(`scheduleBubbleTour`, 타이틀 씬 §title.mjs 배선). 나머지는 라이브러리(P0에서 배경/이펙트로 사용 예정).
 
 ## cartography — 성·교회·탑
 _마을 거점·방어 건물. 성 4종/교회 2종/탑 5종의 미묘한 차이 주의._
@@ -174,6 +174,10 @@ _세균 말·UFO·레이저·마스코트·돔. p1=그린 / p2=핑크._
 | `mascot/germ-green.webp` | 걷는 세균 마스코트 (그린/p1) | 정면을 보고 걷는 귀여운 초록 세균 '아기' 캐릭터의 2프레임 걷기 루프. | germ-green-fast와 형태는 사실상 같지만 재생 속도가 기본(느림)이고 프레임 폭 70px. germ-green-right와 달리 정면 방향(다리가 앞뒤로 교차하는 정면 스트라이드). | 통통한 둥근 민트그린 몸+큰 머리, 작은 점 눈 2개와 옅은 미소, 짤막한 팔다리. 70x96px, 2프레임 걷기 애니. | 배경/데코용 p1 마스코트가 화면을 정면으로 어슬렁 걸어다니는 연출(기본 속도). |
 | `mascot/germ-green-fast.webp` | 걷는 세균 마스코트 빠름 (그린/p1) | 정면 걷기 세균 마스코트의 '빠른' 버전 2프레임 루프. | germ-green과 거의 동일하나 애니가 더 빠른 스트라이드이고 폭 67px로 약간 좁음. 프레임에 몸통 밝은 민트 하이라이트와 배 중앙 작은 점이 보임. germ-green-right와 달리 정면. | 민트그린 통통 세균 아기, 정면, 빠른 다리 교차. 67x96px, 2프레임(빠름). | p1 마스코트가 급하게/빠르게 이동하는 연출 — 서두르는 배경 움직임. |
 | `mascot/germ-green-right.webp` | 걷는 세균 마스코트 우향 (그린/p1) | 오른쪽으로 걷는 세균 마스코트의 2프레임 루프. (구 파일명 `-left` 는 실방향과 반대인 오기 — 2026-07-24 rename) | germ-green/​germ-green-fast(정면)와 달리 몸이 우측 이동 방향으로 틀어져 다리를 넓게 벌린 측면 스트라이드, 팔을 앞뒤로 스윙. 진행 방향이 오른쪽이라는 점이 핵심 차이. 폭 67px. | 민트그린 통통 세균 아기가 우향 걷기 자세(넓은 다리 벌림, 팔 스윙). 67x96px, 2프레임. | p1 마스코트가 화면에서 오른쪽으로 걸어갈 때 쓰는 방향 변형(정면판과 쌍). 좌향은 scaleX(-1) 반전. |
+| `frame/bubble-p1.png` | 말풍선 테두리 프레임 (그린/p1) | 속 빈 둥근 사각 wobble 테두리(꼬리 없음). thin/circle/square 와 같은 9-slice border-image 용. | ★신규 제작(2026-07-30, v2 — 최초 버전은 사선 꼬리 baked-in 220x176 통짜였으나 자유 배치 요구로 재설계) — frame/thin·circle·square·arrow 와 같은 손그림 wobble 기법, 선 색만 ink 대신 germ-green.webp 실측 쉐이드톤(#5c9785). 128x128, slice 48 — border-image 로 내용 길이에 맞춰 신축(어떤 텍스트 길이든 대응). 채움은 이 이미지엔 없음(투명) — `src/scene/speechBubble.mjs` 가 만드는 `.bubble-body` 요소가 paper.jpg 를 자체 CSS background 로 불투명하게 깔아 가독성 확보. | 민트그린 손그림 wobble 아웃라인, 속 완전 투명. 128x128px. | `.speech-bubble[data-owner="p1"] .bubble-body` 의 border-image. 말풍선 몸통(꼬리 제외) 전용. |
+| `frame/bubble-p2.png` | 말풍선 테두리 프레임 (핑크/p2) | bubble-p1과 동일 구조, 색만 핑크. | ★bubble-p1과 형태·slice 동일 — germ-pink.webp 실측 쉐이드톤(#b77b8e). | 코랄핑크 손그림 wobble 아웃라인, 속 완전 투명. 128x128px. | p2 짝. |
+| `frame/bubble-tail-p1.png` | 말풍선 꼬리 (그린/p1) | 수직 아래를 향한 좌우대칭 wobble 뾰족 삼각 꼬리(좁은 밑변, 캔버스 하단까지 닿는 긴 꼭짓점). 밑변(위쪽)은 트여있고 두 사선(빗변)만 잉크선. | ★사선 방향이 아니라 수직(정중앙 아래)으로 뾰족 — CSS `rotate(0/90/180/270deg)`로 상하좌우 어느 변에도 자유 배치 가능하게 설계. v1(56x44, 밑변 76% 폭)은 넓고 얕아 '체크마크'처럼 보인다는 피드백으로 v2(40x52, 밑변 36% 폭)로 재조정 — 더 뾰족하고 길게. 몸통 프레임과 달리 크기가 고정(늘어나지 않음)이라 paper.jpg 채움과 아웃라인을 이 이미지 안에 직접 구웠다(baked) — 몸통처럼 CSS background 분리할 필요가 없음. | 민트그린 wobble 빗변 2줄 + 불투명 한지 텍스처 채움, 꼭짓점이 캔버스 하단 중앙 근처(97%). 40x52px. | `speechBubble()` 이 만드는 `.bubble-tail::after` 배경 — `data-side` 속성값(top/right/bottom/left)에 따라 CSS 로 회전, `--tail-offset` 로 변 위 위치 자유 조절. |
+| `frame/bubble-tail-p2.png` | 말풍선 꼬리 (핑크/p2) | bubble-tail-p1과 동일 구조, 색만 핑크. | ★형태·좌표 동일, germ-pink.webp 쉐이드톤. | 코랄핑크 wobble 빗변 2줄 + 불투명 한지 텍스처 채움. 40x52px. | p2 짝. |
 | `dome-p1.png` | 보호 돔 실드 (p1) | 반투명 유리 종(bell) 모양의 보호 돔/실드. 밝은 배경에선 거의 안 보이고 어두운 배경에서 형태가 드러남. | ship의 외계인 '머리 돔'이 아니라 유닛 위를 덮는 독립 실드 오브젝트. 색이 팀 그린이 아니라 흰색/서리낀 반투명 유리(RGB≈251, 알파 가변). 윗부분 둥근 아치 + 수직 측벽 + 하단 밴드의 종형. | 흰색 반투명 프로스트 유리 종형 돔, 옅은 라이트 림 아웃라인, 하단 수평 베이스 밴드. 83x98px. | p1 세균/셀 위에 씌워 '보호·실드·무적/스폰 보호' 상태를 표시하는 오버레이(어두운 셀 위에서 은은히 발광). |
 
 ## interaction — crosshair·cursor·frame·paper

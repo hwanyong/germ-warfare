@@ -7,6 +7,8 @@ const DICT = {
 	en: {
 		'loading': 'LOADING',
 		'title.play': 'Start Game', 'title.localPvp': 'Local PvP', 'title.tutorial': 'Tutorial', 'title.settings': 'Settings', 'title.credits': 'Credits',
+		'title.tip1': 'Land next to me to clone!', 'title.tip2': 'Jump 2 tiles to move!',
+		'title.tip3': 'Works offline too!',
 		'stage.title': 'Stage Select', 'stage.name': 'Village Invasion', 'stage.best': 'Best', 'stage.start': 'Start', 'stage.back': 'Back', 'stage.locked': 'Locked',
 		'localSetup.title': 'Local PvP', 'localSetup.humans': 'Humans', 'localSetup.ai': 'AI', 'localSetup.total': '{n} players', 'localSetup.aiLevel': 'AI Level',
 		'localSetup.mapPreset': 'Preset', 'localSetup.mapCustom': 'Custom', 'localSetup.width': 'Width', 'localSetup.height': 'Height', 'localSetup.deadTiles': 'Dead tiles', 'localSetup.deadMax': 'max {n}',
@@ -25,6 +27,14 @@ const DICT = {
 		'settings.title': 'Settings', 'settings.sound': 'Sound', 'settings.motion': 'Reduce Motion', 'settings.difficulty': 'Default Difficulty',
 		'settings.language': 'Language', 'settings.tutorialAgain': 'Tutorial Again', 'settings.credits': 'Credits', 'settings.back': 'Back', 'settings.coming': 'soon',
 		'settings.on': 'On', 'settings.off': 'Off',
+		'settings.update': 'Update', 'settings.updateApply': 'Apply & Restart',
+		'settings.updateConfirm': 'This clears cached game data and re-downloads it. If you are offline right now, the game may become unplayable until you are back online. Continue?',
+		'settings.updateConfirmOk': 'Continue', 'settings.updateConfirmCancel': 'Cancel',
+		'settings.qrExport': 'Export via QR', 'settings.qrImport': 'Import via QR',
+		'settings.qrImportScanning': 'Point your camera at the QR code',
+		'settings.qrImportError': 'Camera unavailable',
+		'settings.qrImportSummary': '{n} stage(s) updated', 'settings.qrImportNoChange': 'No changes — already up to date',
+		'settings.qrApply': 'Apply', 'settings.qrCancel': 'Cancel', 'settings.qrClose': 'Close',
 		'tutorial.title': 'Tutorial', 'tutorial.skip': 'Skip', 'tutorial.done': 'Done',
 		'tutorial.sel1': '① Select your germ (green)',
 		'tutorial.clone': '② Now click the adjacent empty cell = Clone (source stays)',
@@ -33,11 +43,13 @@ const DICT = {
 		'tutorial.sel3': '⑤ Select a germ',
 		'tutorial.infect': '⑥ Place next to the enemy (pink) → infect!',
 		'tutorial.fin': '✓ Done! The side with more cells wins.',
-		'credits.made': 'Design · Direction · Code', 'credits.art': 'Art', 'credits.paper': 'Paper', 'credits.fonts': 'Fonts', 'credits.back': 'Back'
+		'credits.made': 'Design · Direction · Code', 'credits.art': 'Art', 'credits.paper': 'Paper', 'credits.fonts': 'Fonts', 'credits.license': 'License audit', 'credits.back': 'Back'
 	},
 	ko: {
 		'loading': '로딩중',
 		'title.play': '게임 시작', 'title.localPvp': '로컬 대전', 'title.tutorial': '튜토리얼', 'title.settings': '설정', 'title.credits': '크레딧',
+		'title.tip1': '옆에 놓으면 복제!', 'title.tip2': '두 칸 뛰면 이동!',
+		'title.tip3': '오프라인에서도 플레이 가능!',
 		'stage.title': '스테이지 선택', 'stage.name': '마을 침공', 'stage.best': '최고점', 'stage.start': '시작', 'stage.back': '뒤로', 'stage.locked': '잠김',
 		'localSetup.title': '로컬 대전', 'localSetup.humans': '사람', 'localSetup.ai': 'AI', 'localSetup.total': '총 {n}명', 'localSetup.aiLevel': 'AI 난이도',
 		'localSetup.mapPreset': '프리셋', 'localSetup.mapCustom': '커스텀', 'localSetup.width': '가로', 'localSetup.height': '세로', 'localSetup.deadTiles': '데드타일', 'localSetup.deadMax': '최대 {n}',
@@ -56,6 +68,14 @@ const DICT = {
 		'settings.title': '설정', 'settings.sound': '사운드', 'settings.motion': '모션 감소', 'settings.difficulty': '기본 난이도',
 		'settings.language': '언어', 'settings.tutorialAgain': '튜토리얼 다시', 'settings.credits': '크레딧', 'settings.back': '뒤로', 'settings.coming': '준비중',
 		'settings.on': '켬', 'settings.off': '끔',
+		'settings.update': '업데이트', 'settings.updateApply': '적용하고 재시작',
+		'settings.updateConfirm': '캐시된 게임 데이터를 지우고 새로 받습니다. 지금 오프라인 상태라면 다시 온라인이 될 때까지 게임을 실행할 수 없을 수 있습니다. 계속할까요?',
+		'settings.updateConfirmOk': '계속', 'settings.updateConfirmCancel': '취소',
+		'settings.qrExport': 'QR로 내보내기', 'settings.qrImport': 'QR로 가져오기',
+		'settings.qrImportScanning': '카메라를 QR코드에 비추세요',
+		'settings.qrImportError': '카메라를 사용할 수 없습니다',
+		'settings.qrImportSummary': '{n}개 스테이지 갱신됩니다', 'settings.qrImportNoChange': '변경 사항 없음 — 이미 최신 상태',
+		'settings.qrApply': '적용', 'settings.qrCancel': '취소', 'settings.qrClose': '닫기',
 		'tutorial.title': '튜토리얼', 'tutorial.skip': '스킵', 'tutorial.done': '완료',
 		'tutorial.sel1': '① 내 세균(초록)을 선택하세요',
 		'tutorial.clone': '② 이제 바로 옆 빈칸을 클릭 = 복제 (원본 유지)',
@@ -64,7 +84,7 @@ const DICT = {
 		'tutorial.sel3': '⑤ 세균을 선택하세요',
 		'tutorial.infect': '⑥ 적(핑크) 옆에 놓으면 감염!',
 		'tutorial.fin': '✓ 완료! 칸이 더 많은 쪽이 승리합니다.',
-		'credits.made': '기획 · 연출 · 코드', 'credits.art': '아트', 'credits.paper': '종이', 'credits.fonts': '폰트', 'credits.back': '뒤로'
+		'credits.made': '기획 · 연출 · 코드', 'credits.art': '아트', 'credits.paper': '종이', 'credits.fonts': '폰트', 'credits.license': '라이선스 감사 문서', 'credits.back': '뒤로'
 	}
 }
 

@@ -13,7 +13,8 @@ export function creditsScene(ctx) {
 			<div>${t('credits.art')}: <a href="https://kenney.nl" target="_blank" rel="noopener">Kenney</a> (CC0)</div>
 			<div class="sub">Alien UFO · Cartography · Crosshair · Cursor · UI Pack</div>
 			<div>${t('credits.paper')}: <a href="https://ambientcg.com/view?id=Paper001" target="_blank" rel="noopener">ambientCG Paper001</a> (CC0)</div>
-			<div>${t('credits.fonts')}: <a href="https://fonts.google.com" target="_blank" rel="noopener">Google Fonts</a> — Orbitron · Gugi · Dongle (OFL)</div>
+			<div>${t('credits.fonts')}: Dongle · Gugi · Orbitron (OFL, self-hosted)</div>
+			<div>${t('credits.license')}: <a href="https://github.com/hwanyong/germ-warfare/blob/main/docs/FONT-LICENSE-AUDIT.md" target="_blank" rel="noopener">FONT-LICENSE-AUDIT.md</a></div>
 		</div>
 		<div class="btn-row">
 			<button class="btn" data-act="back">${t('credits.back')}</button>
