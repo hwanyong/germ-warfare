@@ -15,6 +15,12 @@ export function creditsScene(ctx) {
 			<div>${t('credits.paper')}: <a href="https://ambientcg.com/view?id=Paper001" target="_blank" rel="noopener">ambientCG Paper001</a> (CC0)</div>
 			<div>${t('credits.fonts')}: Dongle · Gugi · Orbitron (OFL, self-hosted)</div>
 			<div>${t('credits.license')}: <a href="https://github.com/hwanyong/germ-warfare/blob/main/docs/FONT-LICENSE-AUDIT.md" target="_blank" rel="noopener">FONT-LICENSE-AUDIT.md</a></div>
+			<hr style="width:100%;border:0;border-top:1px solid #0002" />
+			<div>${t('credits.follow')}:
+				<a href="https://www.threads.com/@uhd_kr" target="_blank" rel="noopener">Threads</a> ·
+				<a href="https://www.youtube.com/@uhd_tech" target="_blank" rel="noopener">YouTube</a> ·
+				<a href="https://www.instagram.com/uhd_kr/" target="_blank" rel="noopener">Instagram</a>
+			</div>
 		</div>
 		<div class="btn-row">
 			<button class="btn" data-act="back">${t('credits.back')}</button>

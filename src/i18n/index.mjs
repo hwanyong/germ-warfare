@@ -12,6 +12,9 @@ const DICT = {
 		'title.tip5': 'Up to 4-way free-for-all!', 'title.tip6': 'Local PvP: set your own map size!',
 		'title.tip7': 'Best score is saved per stage!', 'title.tip8': 'Win? Try Harder difficulty!',
 		'title.tip9': 'Settings: send your progress via QR!', 'title.tip10': 'Replay the tutorial anytime in Settings!',
+		'title.tip11': 'Follow the dev on Threads!', 'title.tip12': 'New videos on YouTube!', 'title.tip13': 'Behind the scenes on Instagram!',
+		'title.tip14': 'YouTube: @uhd_tech', 'title.tip15': 'Threads: @uhd_kr', 'title.tip16': 'Instagram: @uhd_kr',
+		'title.tip17': 'Subscribe @uhd_tech on YouTube!', 'title.tip18': 'Say hi @uhd_kr on Threads!', 'title.tip19': 'Follow @uhd_kr on Instagram!',
 		'stage.title': 'Stage Select', 'stage.name': 'Village Invasion', 'stage.best': 'Best', 'stage.start': 'Start', 'stage.back': 'Back', 'stage.locked': 'Locked',
 		'localSetup.title': 'Local PvP', 'localSetup.humans': 'Humans', 'localSetup.ai': 'AI', 'localSetup.total': '{n} players', 'localSetup.aiLevel': 'AI Level',
 		'localSetup.mapPreset': 'Preset', 'localSetup.mapCustom': 'Custom', 'localSetup.width': 'Width', 'localSetup.height': 'Height', 'localSetup.deadTiles': 'Dead tiles', 'localSetup.deadMax': 'max {n}',
@@ -46,7 +49,7 @@ const DICT = {
 		'tutorial.sel3': '⑤ Select a germ',
 		'tutorial.infect': '⑥ Place next to the enemy (pink) → infect!',
 		'tutorial.fin': '✓ Done! The side with more cells wins.',
-		'credits.made': 'Design · Direction · Code', 'credits.art': 'Art', 'credits.paper': 'Paper', 'credits.fonts': 'Fonts', 'credits.license': 'License audit', 'credits.back': 'Back'
+		'credits.made': 'Design · Direction · Code', 'credits.art': 'Art', 'credits.paper': 'Paper', 'credits.fonts': 'Fonts', 'credits.license': 'License audit', 'credits.follow': 'Follow', 'credits.back': 'Back'
 	},
 	ko: {
 		'loading': '로딩중',
@@ -56,6 +59,9 @@ const DICT = {
 		'title.tip5': '최대 4팀 난전도 가능!', 'title.tip6': '로컬 대전에서 맵 크기 직접 설정!',
 		'title.tip7': '스테이지별 최고점 기록!', 'title.tip8': '이겼으면 난이도 ↑ 도전!',
 		'title.tip9': '설정에서 QR로 진행상황 전송!', 'title.tip10': '설정에서 튜토리얼 언제든 다시보기!',
+		'title.tip11': '스레드에서 개발자를 팔로우!', 'title.tip12': '유튜브에서 신규 영상 확인!', 'title.tip13': '인스타그램에서 비하인드 스토리!',
+		'title.tip14': '유튜브: @uhd_tech', 'title.tip15': '스레드: @uhd_kr', 'title.tip16': '인스타그램: @uhd_kr',
+		'title.tip17': '유튜브 @uhd_tech 구독 눌러줘!', 'title.tip18': '스레드 @uhd_kr 놀러오세요!', 'title.tip19': '인스타그램 @uhd_kr 팔로우!',
 		'stage.title': '스테이지 선택', 'stage.name': '마을 침공', 'stage.best': '최고점', 'stage.start': '시작', 'stage.back': '뒤로', 'stage.locked': '잠김',
 		'localSetup.title': '로컬 대전', 'localSetup.humans': '사람', 'localSetup.ai': 'AI', 'localSetup.total': '총 {n}명', 'localSetup.aiLevel': 'AI 난이도',
 		'localSetup.mapPreset': '프리셋', 'localSetup.mapCustom': '커스텀', 'localSetup.width': '가로', 'localSetup.height': '세로', 'localSetup.deadTiles': '데드타일', 'localSetup.deadMax': '최대 {n}',
@@ -90,7 +96,7 @@ const DICT = {
 		'tutorial.sel3': '⑤ 세균을 선택하세요',
 		'tutorial.infect': '⑥ 적(핑크) 옆에 놓으면 감염!',
 		'tutorial.fin': '✓ 완료! 칸이 더 많은 쪽이 승리합니다.',
-		'credits.made': '기획 · 연출 · 코드', 'credits.art': '아트', 'credits.paper': '종이', 'credits.fonts': '폰트', 'credits.license': '라이선스 감사 문서', 'credits.back': '뒤로'
+		'credits.made': '기획 · 연출 · 코드', 'credits.art': '아트', 'credits.paper': '종이', 'credits.fonts': '폰트', 'credits.license': '라이선스 감사 문서', 'credits.follow': '팔로우', 'credits.back': '뒤로'
 	}
 }
 
