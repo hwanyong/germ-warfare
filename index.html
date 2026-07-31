@@ -19,6 +19,11 @@
 
 	<!-- 폰트는 self-host (public/assets/fonts/, ADR-011) — 외부 CDN 의존 0 -->
 
+	<!-- Umami Cloud — 트래픽 계측, 유일한 의도적 외부 의존(ADR-011 예외).
+	     integrity 미적용 — script.js 는 버전 고정 URL이 아니라 Umami 가 서버측에서 계속 갱신하는
+	     엔드포인트라, 해시 고정 시 다음 갱신에서 무음으로 로드 차단(트래킹 영구 정지)되는 게 더 위험하다. -->
+	<script defer crossorigin="anonymous" src="https://cloud.umami.is/script.js" data-website-id="db077cf4-b237-47a9-84b1-d686da6e1291"></script>
+
 	<!-- 로딩 씬 critical CSS (모듈 CSS/JS 로드 전 즉시 표시) -->
 	<style>
 		#loading { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;

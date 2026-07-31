@@ -36,6 +36,11 @@ export function getRecord(stageId, difficulty) {
 	return load()[stageId]?.[difficulty] ?? { best: 0, wins: 0, plays: 0 }
 }
 
+/** 이 기기에 저장된 진행기록이 있는가 — 재방문 판정용(analytics session_start) */
+export function hasAnyProgress() {
+	return Object.keys(load()).length > 0
+}
+
 /** 플레이 1회 기록. 승리 시에만 score 반영. @returns {{best, newBest}} */
 export function recordPlay(stageId, difficulty, { win, score = 0 }) {
 	const data = load()

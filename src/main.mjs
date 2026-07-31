@@ -11,6 +11,7 @@ import { preloadAll, preloadInBackground } from './loading/preload.mjs'
 import { createManager } from './scene/index.mjs'
 import { installAudio, unlockOnGesture, playSfx, playBgm, stopBgm } from './audio/audio.mjs'
 import { initUpdater } from './pwa/update.mjs'
+import { trackView, trackSessionStart } from './analytics/track.mjs'
 
 // 씬 → BGM 매핑: play = 전투 전용, result = 무음(징글만), 나머지 = 메인 테마 (ADR-009)
 const SCENE_BGM = { play: 'bgm-battle', result: null }
@@ -38,8 +39,11 @@ async function boot() {
 		onEnter: name => {
 			sceneBgm = SCENE_BGM[name] === undefined ? DEFAULT_BGM : SCENE_BGM[name]
 			syncBgm()
+			// play 는 튜토리얼 왕복 중복집계 방지 위해 여기서 안 쏨 — play.mjs 가 게이트 통과 후 직접 호출
+			if (name !== 'play') trackView(name)
 		}
 	})
+	trackSessionStart() // 씬 진입 훅과 별개, 앱 실행당 1회
 	manager.go('title')
 
 	loadingEl?.classList.add('done')
