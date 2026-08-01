@@ -42,6 +42,7 @@
 .btn:active { transform: scale(.96); }
 .btn.primary { font-size: 1.7rem; padding: .34em 1.5em .2em; }
 .btn.big { font-size: 2rem; padding: .36em 1.8em .22em; }
+.btn.danger { background: var(--p2-soft); }
 .btn[aria-selected="true"] { background: var(--p1-soft); }
 
 .card {

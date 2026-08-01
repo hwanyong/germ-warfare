@@ -6,6 +6,8 @@ import { t } from '../../i18n/index.mjs'
 import { settingsControls } from '../settings-panel.mjs'
 import { forceUpdate } from '../../pwa/update.mjs'
 import { showExportOverlay, showImportOverlay } from '../qr-transfer.mjs'
+import { resetProgress } from '../../storage/progress.mjs'
+import { resetSettings } from '../../storage/settings.mjs'
 
 export function settingsScene(ctx) {
 	const el = div('scene', `
@@ -22,6 +24,9 @@ export function settingsScene(ctx) {
 			<button class="btn" data-act="qr-import">${t('settings.qrImport')}</button>
 		</div>
 		<div class="btn-row">
+			<button class="btn danger" data-act="reset">${t('settings.reset')}</button>
+		</div>
+		<div class="btn-row">
 			<button class="btn" data-act="back">${t('settings.back')}</button>
 		</div>
 	`)
@@ -33,6 +38,7 @@ export function settingsScene(ctx) {
 		else if (act === 'update-apply') openUpdateConfirm()
 		else if (act === 'qr-export') showExportOverlay(el)
 		else if (act === 'qr-import') showImportOverlay(el)
+		else if (act === 'reset') openResetConfirm()
 	})
 
 	// 캐시 전체삭제+강제재시작 경고 — 네이티브 confirm() 은 종이질감 비주얼과 안 어울려
@@ -49,6 +55,28 @@ export function settingsScene(ctx) {
 		onClick(ov, 'data-c', c => {
 			ov.remove()
 			if (c === 'ok') forceUpdate()
+		})
+		el.appendChild(ov)
+	}
+
+	// 진행기록·튜토리얼·설정 영구 삭제 — 언어(gw-lang)는 대상 아님(P.2 답변). 삭제 후 reload 로
+	// 인메모리 상태(음소거 등)까지 일관되게 초기화.
+	function openResetConfirm() {
+		const ov = div('pause-overlay', `
+			<div class="logo">${t('settings.reset')}</div>
+			<div class="msg">${t('settings.resetConfirm')}</div>
+			<div class="btn-row">
+				<button class="btn primary" data-c="cancel">${t('settings.resetConfirmCancel')}</button>
+				<button class="btn danger" data-c="ok">${t('settings.resetConfirmOk')}</button>
+			</div>
+		`)
+		onClick(ov, 'data-c', c => {
+			ov.remove()
+			if (c === 'ok') {
+				resetProgress()
+				resetSettings()
+				location.reload()
+			}
 		})
 		el.appendChild(ov)
 	}

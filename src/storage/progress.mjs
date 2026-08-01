@@ -67,6 +67,12 @@ const TUT_KEY = 'gw-tutorial-done'
 export const isTutorialDone = () => localStorage.getItem(TUT_KEY) === '1'
 export const setTutorialDone = () => localStorage.setItem(TUT_KEY, '1')
 
+/** 진행기록 + 튜토리얼 완료 플래그 삭제 — 설정 화면 "계정 초기화"용. 언어(gw-lang)는 대상 아님. */
+export function resetProgress() {
+	localStorage.removeItem(KEY)
+	localStorage.removeItem(TUT_KEY)
+}
+
 // QR 기기간 이전(A7) — 고정 레이아웃 바이너리. JSON 키 반복(best/wins/plays) 제거해
 // 60레코드 기준 ~2.5KB → ~362B로 압축(스테이지·난이도 순서를 오프셋으로 대체).
 const BIN_VERSION = 1

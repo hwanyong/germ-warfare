@@ -20,3 +20,9 @@ export function saveSettings(patch) {
 	catch { /* 저장 불가 — 세션 한정 설정으로 동작 */ }
 	return next
 }
+
+/** 설정 삭제 — 설정 화면 "계정 초기화"용. */
+export function resetSettings() {
+	try { localStorage.removeItem(KEY) }
+	catch { /* 접근 불가 — 삭제할 것도 없음 */ }
+}
