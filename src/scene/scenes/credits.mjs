@@ -21,6 +21,8 @@ export function creditsScene(ctx) {
 				<a href="https://www.youtube.com/@uhd_tech" target="_blank" rel="noopener">YouTube</a> ·
 				<a href="https://www.instagram.com/uhd_kr/" target="_blank" rel="noopener">Instagram</a>
 			</div>
+			<hr style="width:100%;border:0;border-top:1px solid #0002" />
+			<div class="sub">${t('credits.privacy')}</div>
 		</div>
 		<div class="btn-row">
 			<button class="btn" data-act="back">${t('credits.back')}</button>
