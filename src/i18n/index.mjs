@@ -52,7 +52,7 @@ const DICT = {
 		'tutorial.infect': '⑥ Place next to the enemy (pink) → infect!',
 		'tutorial.fin': '✓ Done! The side with more cells wins.',
 		'credits.made': 'Design · Direction · Code', 'credits.art': 'Art', 'credits.paper': 'Paper', 'credits.fonts': 'Fonts', 'credits.license': 'License audit', 'credits.follow': 'Follow', 'credits.back': 'Back',
-			'credits.privacy': 'This site collects anonymous traffic stats via Umami (no cookies, no personal data).'
+			'credits.privacy': 'This site collects anonymous traffic stats via Cloudflare Web Analytics (no cookies, no personal data).'
 	},
 	ko: {
 		'loading': '로딩중',
@@ -102,7 +102,7 @@ const DICT = {
 		'tutorial.infect': '⑥ 적(핑크) 옆에 놓으면 감염!',
 		'tutorial.fin': '✓ 완료! 칸이 더 많은 쪽이 승리합니다.',
 		'credits.made': '기획 · 연출 · 코드', 'credits.art': '아트', 'credits.paper': '종이', 'credits.fonts': '폰트', 'credits.license': '라이선스 감사 문서', 'credits.follow': '팔로우', 'credits.back': '뒤로',
-			'credits.privacy': '이 사이트는 Umami로 익명 트래픽 통계를 수집합니다 (쿠키·개인정보 없음).'
+			'credits.privacy': '이 사이트는 Cloudflare Web Analytics로 익명 트래픽 통계를 수집합니다 (쿠키·개인정보 없음).'
 	}
 }
 

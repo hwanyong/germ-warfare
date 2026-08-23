@@ -19,12 +19,14 @@
 
 	<!-- 폰트는 self-host (public/assets/fonts/, ADR-011) — 외부 CDN 의존 0 -->
 
-	<!-- Umami Cloud — 트래픽 계측, 유일한 의도적 외부 의존(ADR-011 예외).
-	     integrity 미적용 — script.js 는 버전 고정 URL이 아니라 Umami 가 서버측에서 계속 갱신하는
-	     엔드포인트라, 해시 고정 시 다음 갱신에서 무음으로 로드 차단(트래킹 영구 정지)되는 게 더 위험하다.
-	     auto-track 끔 — 씬 전환을 src/analytics/track.mjs 가 전량 수동 계측(SPA 라 자동 감지 부정확),
-	     꺼두지 않으면 로드 시 자동 pageview 1건 + title 씬 수동 pageview 1건으로 세션 첫 진입이 중복집계됨. -->
-	<script defer crossorigin="anonymous" data-auto-track="false" src="https://cloud.umami.is/script.js" data-website-id="db077cf4-b237-47a9-84b1-d686da6e1291"></script>
+	<!-- Cloudflare Web Analytics — 트래픽 계측, 유일한 의도적 외부 의존(ADR-011 예외).
+	     blog.hwanyong.com 전체가 이 토큰 하나로 잡힌다(호스트 단위 집계라 하위 경로도 같은 사이트다).
+	     token 은 비밀이 아니다 — 모든 방문자의 HTML 에 그대로 실려 나가는 공개 식별자다.
+	     integrity 미적용 — beacon.min.js 는 버전 고정 URL 이 아니라 Cloudflare 가 계속 갱신하는
+	     엔드포인트라, 해시를 고정하면 다음 갱신에서 무음으로 로드가 막혀 계측이 영구 정지된다.
+	     ★ 이 앱은 씬을 바꿔도 URL 을 바꾸지 않으므로 집계는 진입 1회뿐이다. 비콘의 SPA 추적은
+	       history.pushState 패치라, 라우팅을 도입하는 날 별도 계측 코드 없이 저절로 씬별로 잡힌다. -->
+	<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "d10ef3756f0a47f48b7896721f153bfa"}'></script>
 
 	<!-- 로딩 씬 critical CSS (모듈 CSS/JS 로드 전 즉시 표시) -->
 	<style>

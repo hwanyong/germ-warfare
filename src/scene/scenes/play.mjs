@@ -8,7 +8,6 @@ import { pickMove, effectiveDifficulty } from '../../game/ai.mjs'
 import { gridMoves } from '../../game/map.mjs'
 import { STAGES } from '../../data/stages.mjs'
 import { isTutorialDone } from '../../storage/progress.mjs'
-import { trackView } from '../../analytics/track.mjs'
 import { t, getLang } from '../../i18n/index.mjs'
 import { playSfx, playBgm } from '../../audio/audio.mjs'
 import { mascotSrc, frozenMascot } from '../mascot.mjs'
@@ -37,8 +36,6 @@ export function playScene(ctx) {
 		queueMicrotask(() => ctx.go('tutorial', { returnTo: 'play', stage, difficulty, mode, players }))
 		return { el: div('scene') }
 	}
-
-	trackView('play') // 게이트 통과 후 딱 한 번 — 튜토리얼 왕복 중복집계 방지
 
 	const stageData = customStage ?? STAGES[stage]
 	// 실제 AI 레벨 = 스테이지 기본(ai) ± 유저 노브 시프트 (진행 커브는 데이터가 결정)
