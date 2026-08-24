@@ -1,0 +1,9 @@
+# 런칭 전까지 색인을 막는다.
+#
+# lab 과 blog 에 같은 내용이 동시에 존재하는 기간이 있고, 그동안 검색엔진이 양쪽을
+# 모두 담으면 중복으로 읽힌다. 런칭일에 아래 두 줄을 지우는 것이 "공개" 스위치다.
+#
+# ★ robots.txt 로는 이 일을 할 수 없다. lab.hwanyong.com 의 robots.txt 는 이 저장소가
+#   아니라 lab 루트 Worker 가 낸다 — 하위 경로의 robots.txt 는 크롤러가 읽지 않는다.
+/*
+  X-Robots-Tag: noindex

@@ -3,3 +3,8 @@ dist/
 .vite/
 .DS_Store
 *.log
+
+# Cloudflare 배포용 임시 산출물 — 워크플로가 dist 를 한 겹 감싸 만든다.
+out/
+# wrangler 로컬 상태(dev 서버 캐시).
+.wrangler/
